@@ -20,4 +20,10 @@ router.post("/login", async (req, res) => {
   res.json(user);
 });
 
+//get users
+router.get("/users", async (req, res) => {
+  const users = await User.find().select("-password");
+  res.json(users);
+});
+
 export default router;
