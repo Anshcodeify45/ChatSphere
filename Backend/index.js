@@ -24,16 +24,32 @@ const io = new Server(server, {
   }
 });
 
-// Socket connection
+const onlineUsers = new Map();
+
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
+  // user joins with their ID
+  socket.on("add_user", (userId) => {
+    onlineUsers.set(userId, socket.id);
+  });
+
+  // send message
   socket.on("send_message", (data) => {
-    io.emit("receive_message", data);
+    const receiverSocketId = onlineUsers.get(data.receiverId);
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("receive_message", data);
+    }
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    for (let [userId, sockId] of onlineUsers.entries()) {
+      if (sockId === socket.id) {
+        onlineUsers.delete(userId);
+        break;
+      }
+    }
   });
 });
 

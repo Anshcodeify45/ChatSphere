@@ -9,6 +9,10 @@ const messageSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"
   },
+  status: {
+  type: String,
+  default: "sent" // sent, delivered, seen
+},
   message: String
 }, { timestamps: true });
 
