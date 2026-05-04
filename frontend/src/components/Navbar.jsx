@@ -6,35 +6,88 @@ function Navbar() {
   const user = JSON.parse(localStorage.getItem("user"));
 
   const handleLogout = () => {
-  localStorage.removeItem("user");
-  navigate("/login");
-  window.location.reload(); 
-};
+    localStorage.removeItem("user");
+    navigate("/login");
+    window.location.reload();
+  };
 
   return (
-    <div style={{
-      display: "flex",
-      justifyContent: "space-between",
-      padding: "12px 20px",
-      background: "#075e54",
-      color: "white"
-    }}>
-      <h3>Chat App</h3>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "12px 20px",
+        background: "#020617", // 🔥 dark theme
+        color: "white",
+        borderBottom: "1px solid #1e293b"
+      }}
+    >
+      {/* 🔥 Logo / App Name */}
+      <h2 style={{ fontWeight: "bold", letterSpacing: "1px" ,color:"#FFFFFF"}}>
+        Chatsphere
+      </h2>
 
+      {/* Right Side */}
       <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
         {!user ? (
           <>
-            <Link to="/login" style={{ color: "white" }}>Login</Link>
-            <Link to="/register" style={{ color: "white" }}>Register</Link>
+            <Link
+              to="/login"
+              style={{
+                color: "#cbd5f5",
+                textDecoration: "none"
+              }}
+            >
+              Login
+            </Link>
+
+            <Link
+              to="/register"
+              style={{
+                color: "#cbd5f5",
+                textDecoration: "none"
+              }}
+            >
+              Register
+            </Link>
           </>
         ) : (
           <>
-            <span>{user.name}</span>
-            <button onClick={handleLogout} style={{
-              padding: "5px 10px",
-              border: "none",
-              cursor: "pointer"
-            }}>
+            {/* User Avatar */}
+            <div
+              style={{
+                width: "35px",
+                height: "35px",
+                borderRadius: "50%",
+                background: "#2563eb",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "bold"
+              }}
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+
+            {/* Username */}
+            <span style={{ fontSize: "14px", color: "#cbd5f5" }}>
+              {user.name}
+            </span>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "6px",
+                border: "none",
+                background: "#ef4444",
+                color: "white",
+                cursor: "pointer",
+                fontSize: "13px"
+              }}
+            >
               Logout
             </button>
           </>

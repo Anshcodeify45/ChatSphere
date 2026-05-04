@@ -6,24 +6,33 @@ function Sidebar({ setSelectedUser }) {
   const [activeUserId, setActiveUserId] = useState(null);
   const [lastMessages, setLastMessages] = useState({});
 
-  const senderId = "69ec4fab48df3ed351a7b649";
+  // ✅ Get logged-in user dynamically
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const senderId = currentUser?._id;
 
-   useEffect(() => {
-  axios
-    .get("http://localhost:8080/api/auth/users")
-    .then((res) => {
-      setUsers(res.data);
+  useEffect(() => {
+    if (!senderId) return;
 
-      const temp = {};
+    axios
+      .get(`http://localhost:8080/api/messages/conversations/${senderId}`)
+      .then((res) => {
+        // 🔥 Remove yourself from list
+        const filteredUsers = res.data.filter(
+          (user) => String(user._id) !== String(senderId)
+        );
 
-      for (let user of res.data) {
-        temp[user._id] = "Click to start chat"; // placeholder
-      }
+        setUsers(filteredUsers);
 
-      setLastMessages(temp);
-    })
-    .catch((err) => console.log(err));
-}, []);
+        // Placeholder last messages
+        const temp = {};
+        filteredUsers.forEach((user) => {
+          temp[user._id] = "Start chatting...";
+        });
+
+        setLastMessages(temp);
+      })
+      .catch((err) => console.log(err));
+  }, [senderId]);
 
   const handleClick = (user) => {
     setSelectedUser(user);
@@ -31,58 +40,109 @@ function Sidebar({ setSelectedUser }) {
   };
 
   return (
-    <div style={{ marginTop: "10px" }}>
-      {users.map((user) => {
-        const isActive = activeUserId === user._id;
+    <div
+      style={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
+      {/* 🔥 Scrollbar Hidden CSS */}
+      <style>
+        {`
+          .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}
+      </style>
 
-        return (
-          <div
-            key={user._id}
-            onClick={() => handleClick(user)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "10px",
-              borderRadius: "10px",
-              cursor: "pointer",
-              background: isActive ? "#1f2937" : "transparent",
-              marginBottom: "8px"
-            }}
-          >
-            {/* Avatar */}
-            <div style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              background: "#4b5563",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: "12px",
-              color: "white",
-              fontWeight: "bold"
-            }}>
-              {user.name.charAt(0).toUpperCase()}
+      {/* Header */}
+      <div
+        style={{
+          padding: "15px",
+          fontSize: "18px",
+          fontWeight: "bold",
+          borderBottom: "1px solid #374151"
+        }}
+      >
+        Chats
+      </div>
+
+      {/* Chat List */}
+      <div
+        className="hide-scrollbar"
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "10px"
+        }}
+      >
+        {users.length === 0 && (
+          <p style={{ color: "#9ca3af", fontSize: "14px" }}>
+            No chats yet
+          </p>
+        )}
+
+        {users.map((user) => {
+          const isActive = activeUserId === user._id;
+
+          return (
+            <div
+              key={user._id}
+              onClick={() => handleClick(user)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "10px",
+                marginBottom: "8px",
+                borderRadius: "8px",
+                cursor: "pointer",
+                background: isActive ? "#1f2937" : "#1e293b",
+                transition: "0.2s"
+              }}
+            >
+              {/* Avatar */}
+              <div
+                style={{
+                  width: "35px",
+                  height: "35px",
+                  borderRadius: "50%",
+                  background: "#4b5563",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: "10px",
+                  fontWeight: "bold"
+                }}
+              >
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+
+              {/* Name + Last Message */}
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "14px" }}>{user.name}</span>
+
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    maxWidth: "140px",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis"
+                  }}
+                >
+                  {lastMessages[user._id] || "No messages"}
+                </span>
+              </div>
             </div>
-
-            {/* Name + Last Message */}
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "15px" }}>{user.name}</span>
-
-              <span style={{
-                fontSize: "12px",
-                color: "#9ca3af",
-                maxWidth: "150px",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis"
-              }}>
-                {lastMessages[user._id] || "Loading..."}
-              </span>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

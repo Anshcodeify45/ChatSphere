@@ -1,4 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { socket } from "./socket";
+
 import Navbar from "./components/Navbar";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
@@ -6,10 +9,15 @@ import Register from "./pages/Register";
 
 function AppLayout() {
   const location = useLocation();
-
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // hide navbar on auth pages OR when not logged in
+  // ✅ Register user globally
+  useEffect(() => {
+    if (user?._id) {
+      socket.emit("add_user", user._id);
+    }
+  }, [user]);
+
   const hideNavbar =
     !user ||
     location.pathname === "/login" ||

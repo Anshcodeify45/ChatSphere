@@ -12,37 +12,38 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 
-
-
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+  },
 });
 
+// ✅ Store online users
 const onlineUsers = new Map();
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  // user joins with their ID
+  // ✅ Register user
   socket.on("add_user", (userId) => {
-    onlineUsers.set(userId, socket.id);
+    onlineUsers.set(String(userId), socket.id);
+    console.log("ONLINE USERS:", onlineUsers);
   });
 
-  // send message
+  // ✅ Send message
   socket.on("send_message", (data) => {
-    const receiverSocketId = onlineUsers.get(data.receiverId);
+    const receiverSocketId = onlineUsers.get(String(data.receiverId));
 
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("receive_message", data);
     }
   });
 
+  // ✅ Handle disconnect
   socket.on("disconnect", () => {
     for (let [userId, sockId] of onlineUsers.entries()) {
       if (sockId === socket.id) {
@@ -57,12 +58,12 @@ app.get("/", (req, res) => {
   res.send("Chat API Running");
 });
 
-mongoose.connect("mongodb://anishpatnaik45:anshcode45@ac-9toov8i-shard-00-00.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-01.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-02.xr2kykj.mongodb.net:27017/?ssl=true&replicaSet=atlas-8rzsgx-shard-0&authSource=admin&appName=Cluster0")
+mongoose
+  .connect("mongodb://anishpatnaik45:Ansh1998@ac-9toov8i-shard-00-00.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-01.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-02.xr2kykj.mongodb.net:27017/?ssl=true&replicaSet=atlas-8rzsgx-shard-0&authSource=admin&appName=Cluster0")
   .then(() => {
-    console.log("MongoDB Atlas connected");
-
+    console.log("MongoDB connected");
     server.listen(8080, () => {
       console.log("Server running on port 8080");
     });
   })
-  .catch(err => console.log("DB Error:", err));
+  .catch((err) => console.log(err));

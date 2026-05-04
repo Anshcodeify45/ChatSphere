@@ -1,163 +1,146 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { socket } from "../socket";
 import Messageinput from "./Messageinput";
 
 function Chat({ selectedUser }) {
   const [messages, setMessages] = useState([]);
-  console.log("MESSAGES:", messages);
+  const bottomRef = useRef();
 
   const senderId = "69ec4fab48df3ed351a7b649";
   const receiverId = selectedUser?._id;
 
-  // ✅ 1. Register user in socket (ONCE)
-  useEffect(() => {
-    socket.emit("add_user", senderId);
-  }, [senderId]);
-
-  // ✅ 2. Fetch old messages when user changes
+  // ✅ Fetch messages
   useEffect(() => {
     if (!receiverId) return;
 
     axios
       .get(`http://localhost:8080/api/messages/${senderId}/${receiverId}`)
-      .then((res) => setMessages(res.data))
-      .catch((err) => console.log(err));
+      .then((res) => setMessages(res.data));
   }, [receiverId]);
 
-  // ✅ 3. Real-time message listener (ONLY ONE)
+  // ✅ Real-time listener
   useEffect(() => {
-    if (!receiverId) return;
-
     const handler = (data) => {
-  const isValidChat =
-    (data.senderId === senderId && data.receiverId === receiverId) ||
-    (data.senderId === receiverId && data.receiverId === senderId);
+      const isValidChat =
+        (String(data.senderId) === String(senderId) &&
+          String(data.receiverId) === String(receiverId)) ||
+        (String(data.senderId) === String(receiverId) &&
+          String(data.receiverId) === String(senderId));
 
-  if (isValidChat) {
-    console.log("RECEIVED MESSAGE:", data); // ✅ correct log
-
-    setMessages((prev) => [...prev, data]); // ✅ correct update
-  }
-};
+      if (isValidChat) {
+        setMessages((prev) => [...prev, data]);
+      }
+    };
 
     socket.on("receive_message", handler);
-
-    return () => {
-      socket.off("receive_message", handler);
-    };
+    return () => socket.off("receive_message", handler);
   }, [receiverId, senderId]);
 
-  // ---------- helpers ----------
-  const formatTime = (time) => {
-    const date = new Date(time);
-    return date.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  // ✅ Auto scroll to latest message
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  const getStatusIcon = (status) => {
-    if (status === "sent") return "✔";
-    if (status === "delivered") return "✔✔";
-    if (status === "seen") return "✔✔";
-  };
+  if (!selectedUser)
+    return (
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <h3>Select user</h3>
+      </div>
+    );
 
-  if (!selectedUser) {
-    return <h3 style={{ padding: 20 }}>Select a user to start chat</h3>;
-  }
+  const formatTime = (date) => {
+  const d = new Date(date);
+  return d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+};
 
   return (
     <div
       style={{
-        height: "100vh",
+        flex: 1,
         display: "flex",
         flexDirection: "column",
-        background: "#e5ddd5",
+        height: "100vh",
+        background: "#0f172a",
+        color: "white"
       }}
     >
       {/* Header */}
       <div
         style={{
           padding: "15px",
-          background: "#075e54",
-          color: "white",
-          fontWeight: "bold",
+          borderBottom: "1px solid #374151",
+          fontWeight: "bold"
         }}
       >
-        {selectedUser?.name}
+        {selectedUser.name}
       </div>
 
       {/* Messages */}
       <div
+        className="hide-scrollbar"
         style={{
           flex: 1,
-          padding: "15px",
           overflowY: "auto",
+          padding: "10px",
           display: "flex",
-          flexDirection: "column",
-          gap: "10px",
+          flexDirection: "column"
         }}
       >
-        {messages.map((msg, index) => {
-          const isMe = String(msg.senderId) === String(senderId);
+        {messages.map((msg, i) => {
+          const isMyMessage = String(msg.senderId) === String(senderId);
 
           return (
             <div
-              key={index}
+              key={i}
               style={{
-                alignSelf: isMe ? "flex-end" : "flex-start",
-                maxWidth: "60%",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                background: isMe ? "#dcf8c6" : "white",
-                fontSize: "14px",
+                display: "flex",
+                justifyContent: isMyMessage ? "flex-end" : "flex-start",
+                marginBottom: "8px"
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span>{msg.message}</span>
+              <div
+                style={{
+                  maxWidth: "60%",
+                  padding: "10px",
+                  borderRadius: isMyMessage
+                    ? "10px 10px 0 10px"
+                    : "10px 10px 10px 0",
+                  background: isMyMessage ? "#2563eb" : "#374151",
+                  color: "white"
+                }}
+              >
+                {msg.text}
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: "5px",
-                    marginTop: "4px",
-                  }}
-                >
-                  <span style={{ fontSize: "10px", color: "#555" }}>
-                    {msg.createdAt ? formatTime(msg.createdAt) : ""}
-                  </span>
-
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      color: msg.status === "seen" ? "blue" : "gray",
-                    }}
-                  >
-                    {getStatusIcon(msg.status)}
-                  </span>
-                </div>
+                {/* Time */}
+            <span
+              style={{
+                fontSize: "11px",
+                color: "#9ca3af",
+                marginTop: "6px",   // 🔥 increased spacing
+                paddingLeft: "4px"
+              }}
+            >
+              {formatTime(msg.createdAt || new Date())}
+            </span>
               </div>
             </div>
           );
         })}
+
+        {/* Auto scroll target */}
+        <div ref={bottomRef} />
       </div>
 
       {/* Input */}
-      <div
-        style={{
-          display: "flex",
-          padding: "10px",
-          background: "#f0f0f0",
-        }}
-      >
-        <Messageinput
-          senderId={senderId}
-          receiverId={receiverId}
-          setMessages={setMessages}
-        />
-      </div>
+      <Messageinput
+        senderId={senderId}
+        receiverId={receiverId}
+        setMessages={setMessages}
+      />
     </div>
   );
 }
