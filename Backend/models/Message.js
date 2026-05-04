@@ -10,7 +10,10 @@ const messageSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
-    text: String, // ✅ FINAL FIELD
+    text: {
+        type: String,
+        required: true
+      }, 
     status: {
       type: String,
       default: "sent",

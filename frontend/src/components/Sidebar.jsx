@@ -13,7 +13,7 @@ function Sidebar({ setSelectedUser }) {
 
 const fetchConversations = () => {
   if (!senderId) return;
-
+console.log("senderId:", senderId);
   axios
     .get(`http://localhost:8080/api/messages/conversations/${senderId}`)
     .then((res) => {
@@ -22,6 +22,7 @@ const fetchConversations = () => {
       const filteredUsers = res.data.filter(
         (user) => String(user._id) !== String(senderId)
       );
+      console.log("FILTERED:", filteredUsers);
 
       setUsers(filteredUsers);
 

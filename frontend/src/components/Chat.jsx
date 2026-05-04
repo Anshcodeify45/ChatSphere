@@ -5,139 +5,112 @@ import Messageinput from "./Messageinput";
 
 function Chat({ selectedUser }) {
   const [messages, setMessages] = useState([]);
-  const bottomRef = useRef();
+  const bottomRef = useRef(null);
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  const senderId = user?._id;
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const senderId = currentUser?._id;
   const receiverId = selectedUser?._id;
 
-  // ✅ Fetch messages
+  // 🔥 RESET CHAT WHEN USER CHANGES
   useEffect(() => {
-    if (!receiverId) return;
-
-    axios
-      .get(`http://localhost:8080/api/messages/${senderId}/${receiverId}`)
-      .then((res) => setMessages(res.data));
+    setMessages([]); // important reset
   }, [receiverId]);
 
-  // ✅ Real-time listener
+  // ✅ FETCH MESSAGES
+  useEffect(() => {
+    if (!receiverId || !senderId) return;
+
+    axios
+      .get(`http://localhost:8000/api/messages/${senderId}/${receiverId}`)
+      .then((res) => {
+        setMessages(res.data);
+      })
+      .catch((err) => console.log(err));
+  }, [receiverId, senderId]);
+
+  // ✅ REALTIME SOCKET
   useEffect(() => {
     const handler = (data) => {
-      const isValidChat =
+      const isChat =
         (String(data.senderId) === String(senderId) &&
           String(data.receiverId) === String(receiverId)) ||
         (String(data.senderId) === String(receiverId) &&
           String(data.receiverId) === String(senderId));
 
-      if (isValidChat) {
+      if (isChat) {
         setMessages((prev) => [...prev, data]);
       }
     };
 
     socket.on("receive_message", handler);
+
     return () => socket.off("receive_message", handler);
   }, [receiverId, senderId]);
 
-  // ✅ Auto scroll to latest message
+  // 🔥 AUTO SCROLL
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  if (!selectedUser)
+  if (!selectedUser) {
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <h3>Select user</h3>
+      <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
+        Select a user to start chat
       </div>
     );
-
-  const formatTime = (date) => {
-  const d = new Date(date);
-  return d.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-};
+  }
 
   return (
-    <div
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        overflow: "hidden",
-        background: "#0f172a",
-        color: "white"
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "15px",
-          borderBottom: "1px solid #374151",
-          fontWeight: "bold"
-        }}
-      >
+    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      
+      {/* HEADER */}
+      <div style={{ padding: "12px", borderBottom: "1px solid #333" }}>
         {selectedUser.name}
       </div>
 
-      {/* Messages */}
-      <div
-        className="hide-scrollbar"
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "10px",
-          display: "flex",
-          flexDirection: "column"
-        }}
-      >
+      {/* CHAT BODY */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "10px" }}>
         {messages.map((msg, i) => {
-          const isMyMessage = String(msg.senderId) === String(senderId);
+          const isMe = String(msg.senderId) === String(senderId);
 
           return (
             <div
               key={i}
               style={{
                 display: "flex",
-                justifyContent: isMyMessage ? "flex-end" : "flex-start",
+                justifyContent: isMe ? "flex-end" : "flex-start",
                 marginBottom: "8px"
               }}
             >
               <div
                 style={{
-                  maxWidth: "60%",
+                  background: isMe ? "#2563eb" : "#374151",
                   padding: "10px",
-                  borderRadius: isMyMessage
-                    ? "10px 10px 0 10px"
-                    : "10px 10px 10px 0",
-                  background: isMyMessage ? "#2563eb" : "#374151",
+                  borderRadius: "10px",
+                  maxWidth: "60%",
                   color: "white"
                 }}
               >
                 {msg.text}
 
-                {/* Time */}
-            <span
-              style={{
-                fontSize: "11px",
-                color: "#9ca3af",
-                marginTop: "6px",   // 🔥 increased spacing
-                paddingLeft: "4px"
-              }}
-            >
-              {formatTime(msg.createdAt || new Date())}
-            </span>
+                {/* time */}
+                <div style={{ fontSize: "10px", marginTop: "4px", opacity: 0.7 }}>
+                  {msg.createdAt
+                    ? new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })
+                    : ""}
+                </div>
               </div>
             </div>
           );
         })}
 
-        {/* Auto scroll target */}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
+      {/* INPUT */}
       <Messageinput
         senderId={senderId}
         receiverId={receiverId}

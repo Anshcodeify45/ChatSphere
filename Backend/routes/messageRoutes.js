@@ -27,38 +27,32 @@ router.get("/conversations/:userId", async (req, res) => {
     const { userId } = req.params;
 
     const messages = await Message.find({
-      $or: [
-        { senderId: userId },
-        { receiverId: userId }
-      ]
+      $or: [{ senderId: userId }, { receiverId: userId }]
     })
-      .populate("senderId", "name")
-      .populate("receiverId", "name")
-      .sort({ createdAt: -1 });
+    .populate("senderId", "name")
+    .populate("receiverId", "name")
+    .sort({ createdAt: -1 });
 
-    const usersMap = new Map(); // ✅ FIXED
+    const usersMap = new Map();
 
     messages.forEach((msg) => {
-      let otherUser;
+      const sender = msg.senderId;
+      const receiver = msg.receiverId;
 
-      if (String(msg.senderId._id) === String(userId)) {
-        otherUser = msg.receiverId;
-      } else {
-        otherUser = msg.senderId;
-      }
+      const otherUser =
+        String(sender._id) === String(userId) ? receiver : sender;
 
-      if (!usersMap.has(String(otherUser._id))) {
-        usersMap.set(String(otherUser._id), otherUser);
-      }
+      if (!otherUser) return;
+
+      usersMap.set(String(otherUser._id), otherUser);
     });
 
-    res.json(Array.from(usersMap.values())); // ✅ FIXED
+    res.json([...usersMap.values()]);
   } catch (err) {
-    console.log("CONVO ERROR:", err);
+    console.log(err);
     res.status(500).json({ error: "Server error" });
   }
 });
-
 
 // ✅ Get messages (KEEP THIS BELOW)
 router.get("/:senderId/:receiverId", async (req, res) => {
