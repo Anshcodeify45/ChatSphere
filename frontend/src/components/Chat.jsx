@@ -7,7 +7,8 @@ function Chat({ selectedUser }) {
   const [messages, setMessages] = useState([]);
   const bottomRef = useRef();
 
-  const senderId = "69ec4fab48df3ed351a7b649";
+  const user = JSON.parse(localStorage.getItem("user"));
+  const senderId = user?._id;
   const receiverId = selectedUser?._id;
 
   // ✅ Fetch messages
@@ -63,7 +64,8 @@ function Chat({ selectedUser }) {
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
+        height: "100%",
+        overflow: "hidden",
         background: "#0f172a",
         color: "white"
       }}

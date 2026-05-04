@@ -5,7 +5,8 @@ function Contacts({ setSelectedUser }) {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
 
-  const currentUserId = "69ec4fab48df3ed351a7b649";
+  const user = JSON.parse(localStorage.getItem("user"));
+const currentUserId = user?._id;
 
   useEffect(() => {
     axios

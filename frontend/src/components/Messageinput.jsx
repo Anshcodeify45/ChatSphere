@@ -25,7 +25,7 @@ function Messageinput({ senderId, receiverId, setMessages }) {
       setMessages((prev) => [...prev, savedMessage]);
 
       socket.emit("send_message", savedMessage);
-
+      socket.emit("refresh_sidebar");
       setMessage("");
     } catch (err) {
       console.log(err);

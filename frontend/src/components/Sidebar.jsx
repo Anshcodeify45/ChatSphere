@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { socket } from "../socket";
 
 function Sidebar({ setSelectedUser }) {
   const [users, setUsers] = useState([]);
@@ -10,35 +11,46 @@ function Sidebar({ setSelectedUser }) {
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const senderId = currentUser?._id;
 
-  useEffect(() => {
-    if (!senderId) return;
+const fetchConversations = () => {
+  if (!senderId) return;
 
-    axios
-      .get(`http://localhost:8080/api/messages/conversations/${senderId}`)
-      .then((res) => {
-        // 🔥 Remove yourself from list
-        const filteredUsers = res.data.filter(
-          (user) => String(user._id) !== String(senderId)
-        );
+  axios
+    .get(`http://localhost:8080/api/messages/conversations/${senderId}`)
+    .then((res) => {
+      console.log("SIDEBAR DATA:", res.data);
 
-        setUsers(filteredUsers);
+      const filteredUsers = res.data.filter(
+        (user) => String(user._id) !== String(senderId)
+      );
 
-        // Placeholder last messages
-        const temp = {};
-        filteredUsers.forEach((user) => {
-          temp[user._id] = "Start chatting...";
-        });
+      setUsers(filteredUsers);
 
-        setLastMessages(temp);
-      })
-      .catch((err) => console.log(err));
-  }, [senderId]);
+      const temp = {};
+      filteredUsers.forEach((user) => {
+        temp[user._id] = "Start chatting...";
+      });
 
-  const handleClick = (user) => {
-    setSelectedUser(user);
-    setActiveUserId(user._id);
+      setLastMessages(temp);
+    })
+    .catch((err) => console.log(err));
+};
+
+useEffect(() => {
+  fetchConversations();
+}, [senderId]);
+
+useEffect(() => {
+  socket.on("refresh_sidebar", fetchConversations);
+
+  return () => {
+    socket.off("refresh_sidebar", fetchConversations);
   };
+}, []);
 
+const handleClick = (user) => {
+  setSelectedUser(user);
+  setActiveUserId(user._id);
+};
   return (
     <div
       style={{

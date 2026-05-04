@@ -10,7 +10,7 @@ function Dashboard() {
     <div
       style={{
         display: "flex",
-        height: "87vh",        // 🔥 full screen
+        height: "90vh",        // 🔥 full screen
         width: "100%",
         overflow: "hidden",     // 🔥 no page scroll
         fontFamily: "Arial"
