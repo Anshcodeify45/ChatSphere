@@ -29,11 +29,29 @@ const onlineUsers = new Map();
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
+
+
   // ✅ Register user
   socket.on("add_user", (userId) => {
     onlineUsers.set(String(userId), socket.id);
     console.log("ONLINE USERS:", onlineUsers);
   });
+
+ socket.on("typing", ({ senderId, receiverId }) => {
+  const receiverSocketId = onlineUsers.get(String(receiverId));
+
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("typing", { senderId });
+  }
+});
+
+socket.on("stop_typing", ({ senderId, receiverId }) => {
+  const receiverSocketId = onlineUsers.get(String(receiverId));
+
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("stop_typing", { senderId });
+  }
+});
 
   // ✅ Send message
   socket.on("send_message", (data) => {

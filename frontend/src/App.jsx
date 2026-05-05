@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function AppLayout() {
   const location = useLocation();
@@ -29,8 +30,16 @@ function AppLayout() {
 
       <Routes>
         <Route path="/" element={user ? <Dashboard /> : <Login />} />
-        <Route path="/login" element={!user ? <Login /> : <Dashboard />} />
         <Route path="/register" element={!user ? <Register /> : <Dashboard />} />
+
+         <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );

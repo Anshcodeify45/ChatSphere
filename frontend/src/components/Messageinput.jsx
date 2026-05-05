@@ -4,6 +4,8 @@ import { socket } from "../socket";
 
 function Messageinput({ senderId, receiverId, setMessages }) {
   const [message, setMessage] = useState("");
+  const [typingTimeout, setTypingTimeout] = useState(null);
+
 
   const sendMessage = async () => {
     if (!message.trim()) return;
@@ -39,6 +41,19 @@ function Messageinput({ senderId, receiverId, setMessages }) {
     }
   };
 
+  
+
+const handleTyping = () => {
+  socket.emit("typing", { senderId, receiverId });
+
+  if (typingTimeout) clearTimeout(typingTimeout);
+
+  const timeout = setTimeout(() => {
+    socket.emit("stop_typing", { senderId, receiverId });
+  }, 1000);
+
+  setTypingTimeout(timeout);
+};
   return (
     <div
       style={{
@@ -52,21 +67,24 @@ function Messageinput({ senderId, receiverId, setMessages }) {
     >
       {/* Input */}
       <input
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Type a message..."
-        style={{
-          flex: 1,
-          padding: "10px 14px",
-          borderRadius: "20px",
-          border: "none",
-          outline: "none",
-          background: "#1e293b",
-          color: "white",
-          fontSize: "14px"
-        }}
-      />
+  value={message}
+    onChange={(e) => {
+      setMessage(e.target.value);
+      handleTyping(); // 🔥 ADD THIS LINE
+    }}
+    onKeyDown={handleKeyDown}
+    placeholder="Type a message..."
+    style={{
+      flex: 1,
+      padding: "10px 14px",
+      borderRadius: "20px",
+      border: "none",
+      outline: "none",
+      background: "#1e293b",
+      color: "white",
+      fontSize: "14px"
+    }}
+  />
 
       {/* Send Button */}
       <button

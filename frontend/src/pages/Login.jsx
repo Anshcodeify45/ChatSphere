@@ -10,7 +10,6 @@ function Login() {
     try {
        console.log("LOGIN CLICKED");
       const res = await axios.post("http://localhost:8080/api/auth/login", form);
-      console.log("LOGIN RESPONSE:", res.data);
       localStorage.setItem("user", JSON.stringify(res.data));
       navigate("/");
     } catch (err) {
