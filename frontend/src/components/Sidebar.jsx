@@ -13,7 +13,7 @@ function Sidebar({ setSelectedUser }) {
 
 const fetchConversations = () => {
   if (!senderId) return;
-console.log("senderId:", senderId);
+
   axios
     .get(`http://localhost:8080/api/messages/conversations/${senderId}`)
     .then((res) => {

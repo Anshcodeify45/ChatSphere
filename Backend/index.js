@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import { Server } from "socket.io";
 import authRoutes from "./routes/authRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
-
+import userRoutes from "./routes/userRoutes.js";
 const app = express();
 const server = http.createServer(app);
 
@@ -14,6 +14,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/users", userRoutes);
 
 const io = new Server(server, {
   cors: {
@@ -59,7 +60,7 @@ app.get("/", (req, res) => {
 });
 
 mongoose
-  .connect("mongodb://anishpatnaik45:Ansh1998@ac-9toov8i-shard-00-00.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-01.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-02.xr2kykj.mongodb.net:27017/?ssl=true&replicaSet=atlas-8rzsgx-shard-0&authSource=admin&appName=Cluster0")
+  .connect("mongodb://anishpatnaik45:Ansh1998@ac-9toov8i-shard-00-00.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-01.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-02.xr2kykj.mongodb.net:27017/Chat_Sphere?ssl=true&replicaSet=atlas-8rzsgx-shard-0&authSource=admin&appName=Cluster0")
   .then(() => {
     console.log("MongoDB connected");
     server.listen(8080, () => {

@@ -22,29 +22,34 @@ router.post("/", async (req, res) => {
   }
 });
 
+// ✅ Get chat messages
 router.get("/conversations/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
     const messages = await Message.find({
-      $or: [{ senderId: userId }, { receiverId: userId }]
+      $or: [
+        { senderId: userId },
+        { receiverId: userId }
+      ]
     })
-    .populate("senderId", "name")
-    .populate("receiverId", "name")
-    .sort({ createdAt: -1 });
+      .populate("senderId", "name email")
+      .populate("receiverId", "name email")
+      .sort({ createdAt: -1 });
 
     const usersMap = new Map();
 
     messages.forEach((msg) => {
-      const sender = msg.senderId;
-      const receiver = msg.receiverId;
+      const isSender = String(msg.senderId._id) === String(userId);
+      const otherUser = isSender ? msg.receiverId : msg.senderId;
 
-      const otherUser =
-        String(sender._id) === String(userId) ? receiver : sender;
-
-      if (!otherUser) return;
-
-      usersMap.set(String(otherUser._id), otherUser);
+      usersMap.set(String(otherUser._id), {
+        _id: otherUser._id,
+        name: otherUser.name,
+        email: otherUser.email,
+        lastMessage: msg.text,
+        time: msg.createdAt
+      });
     });
 
     res.json([...usersMap.values()]);
@@ -54,23 +59,20 @@ router.get("/conversations/:userId", async (req, res) => {
   }
 });
 
-// ✅ Get messages (KEEP THIS BELOW)
 router.get("/:senderId/:receiverId", async (req, res) => {
   try {
     const { senderId, receiverId } = req.params;
 
     const messages = await Message.find({
       $or: [
-        { senderId, receiverId },
+        { senderId: senderId, receiverId: receiverId },
         { senderId: receiverId, receiverId: senderId },
       ],
-    })
-      .populate("senderId", "name")
-      .populate("receiverId", "name")
-      .sort({ createdAt: 1 });
+    }).sort({ createdAt: 1 });
 
     res.json(messages);
-  } catch (error) {
+  } catch (err) {
+    console.log(err);
     res.status(500).json({ error: "Server error" });
   }
 });

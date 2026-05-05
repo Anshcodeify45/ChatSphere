@@ -11,24 +11,30 @@ function Chat({ selectedUser }) {
   const senderId = currentUser?._id;
   const receiverId = selectedUser?._id;
 
-  // 🔥 RESET CHAT WHEN USER CHANGES
+  // ✅ FETCH MESSAGES (Single Source of Truth)
   useEffect(() => {
-    setMessages([]); // important reset
-  }, [receiverId]);
+    const fetchMessages = async () => {
+      if (!senderId || !receiverId) return;
 
-  // ✅ FETCH MESSAGES
-  useEffect(() => {
-    if (!receiverId || !senderId) return;
+      try {
+        console.log("Fetching messages...");
 
-    axios
-      .get(`http://localhost:8000/api/messages/${senderId}/${receiverId}`)
-      .then((res) => {
-        setMessages(res.data);
-      })
-      .catch((err) => console.log(err));
-  }, [receiverId, senderId]);
+        const res = await axios.get(
+          `http://localhost:8080/api/messages/${senderId}/${receiverId}`
+        );
 
-  // ✅ REALTIME SOCKET
+        console.log("DATA:", res.data);
+
+        setMessages(res.data); // ✅ clean set (no race condition)
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchMessages();
+  }, [senderId, receiverId]);
+
+  // ✅ SOCKET (Realtime messages with duplicate protection)
   useEffect(() => {
     const handler = (data) => {
       const isChat =
@@ -37,49 +43,72 @@ function Chat({ selectedUser }) {
         (String(data.senderId) === String(receiverId) &&
           String(data.receiverId) === String(senderId));
 
-      if (isChat) {
-        setMessages((prev) => [...prev, data]);
-      }
+      if (!isChat) return;
+
+      setMessages((prev) => {
+        const exists = prev.some((msg) => msg._id === data._id);
+        if (exists) return prev;
+
+        return [...prev, data];
+      });
     };
 
     socket.on("receive_message", handler);
 
     return () => socket.off("receive_message", handler);
-  }, [receiverId, senderId]);
+  }, [senderId, receiverId]);
 
-  // 🔥 AUTO SCROLL
+  // ✅ AUTO SCROLL (only when messages exist)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
+  // ✅ EMPTY STATE
   if (!selectedUser) {
     return (
-      <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center" }}>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          color: "white",
+        }}
+      >
         Select a user to start chat
       </div>
     );
   }
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-      
+    <div style={{ flex: 1, display: "flex",height:"100%"  ,flexDirection: "column" }}>
       {/* HEADER */}
-      <div style={{ padding: "12px", borderBottom: "1px solid #333" }}>
+      <div style={{ padding: "12px", borderBottom: "1px solid #333", color: "white" }}>
         {selectedUser.name}
       </div>
 
       {/* CHAT BODY */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "10px" }}>
-        {messages.map((msg, i) => {
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "10px",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {messages.map((msg) => {
           const isMe = String(msg.senderId) === String(senderId);
 
           return (
             <div
-              key={i}
+              key={msg._id}
               style={{
                 display: "flex",
                 justifyContent: isMe ? "flex-end" : "flex-start",
-                marginBottom: "8px"
+                marginBottom: "8px",
               }}
             >
               <div
@@ -88,17 +117,22 @@ function Chat({ selectedUser }) {
                   padding: "10px",
                   borderRadius: "10px",
                   maxWidth: "60%",
-                  color: "white"
+                  color: "white",
                 }}
               >
                 {msg.text}
 
-                {/* time */}
-                <div style={{ fontSize: "10px", marginTop: "4px", opacity: 0.7 }}>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    marginTop: "4px",
+                    opacity: 0.7,
+                  }}
+                >
                   {msg.createdAt
                     ? new Date(msg.createdAt).toLocaleTimeString([], {
                         hour: "2-digit",
-                        minute: "2-digit"
+                        minute: "2-digit",
                       })
                     : ""}
                 </div>
