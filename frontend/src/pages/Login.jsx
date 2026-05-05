@@ -10,7 +10,7 @@ function Login() {
     try {
       const res = await axios.post("http://localhost:8080/api/auth/login", form);
       localStorage.setItem("user", JSON.stringify(res.data));
-      navigate("/");
+       window.location.href = "/";
     } catch (err) {
       alert("Invalid credentials");
     }
@@ -25,7 +25,7 @@ function Login() {
         background: "#020617",
       }}
     >
-      {/* 🔥 LEFT SIDE (LOGIN) */}
+      {/*LEFT SIDE (LOGIN) */}
       <div
         style={{
           width: "40%",
@@ -124,7 +124,7 @@ function Login() {
         </div>
       </div>
 
-      {/* 🔥 RIGHT SIDE (IMAGE) */}
+      {/* RIGHT SIDE */}
       <div
         style={{
           width: "60%",
@@ -141,7 +141,7 @@ function Login() {
           }}
         />
 
-        {/* overlay for smooth blend */}
+        
         <div
           style={{
             position: "absolute",

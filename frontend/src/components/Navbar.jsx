@@ -18,12 +18,12 @@ function Navbar() {
         justifyContent: "space-between",
         alignItems: "center",
         padding: "12px 20px",
-        background: "#020617", // 🔥 dark theme
+        background: "#020617", // dark theme
         color: "white",
         borderBottom: "1px solid #1e293b"
       }}
     >
-      {/* 🔥 Logo / App Name */}
+      {/*   App Name */}
       <h2 style={{ fontWeight: "bold", letterSpacing: "1px" ,color:"#FFFFFF"}}>
         Chatsphere
       </h2>

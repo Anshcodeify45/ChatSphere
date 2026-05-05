@@ -34,7 +34,7 @@ function Messageinput({ senderId, receiverId, setMessages }) {
     }
   };
 
-  // 🔥 Enter to send
+  //Enter to send
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       sendMessage();
@@ -70,7 +70,7 @@ const handleTyping = () => {
   value={message}
     onChange={(e) => {
       setMessage(e.target.value);
-      handleTyping(); // 🔥 ADD THIS LINE
+      handleTyping();
     }}
     onKeyDown={handleKeyDown}
     placeholder="Type a message..."

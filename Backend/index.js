@@ -23,7 +23,7 @@ const io = new Server(server, {
   },
 });
 
-// ✅ Store online users
+// Store online users
 const onlineUsers = new Map();
 
 io.on("connection", (socket) => {
@@ -31,7 +31,7 @@ io.on("connection", (socket) => {
 
 
 
-  // ✅ Register user
+  // Register user
   socket.on("add_user", (userId) => {
     onlineUsers.set(String(userId), socket.id);
     console.log("ONLINE USERS:", onlineUsers);
@@ -53,7 +53,7 @@ socket.on("stop_typing", ({ senderId, receiverId }) => {
   }
 });
 
-  // ✅ Send message
+  // Send message
   socket.on("send_message", (data) => {
     const receiverSocketId = onlineUsers.get(String(data.receiverId));
 
@@ -62,7 +62,7 @@ socket.on("stop_typing", ({ senderId, receiverId }) => {
     }
   });
 
-  // ✅ Handle disconnect
+  // Handle disconnect
   socket.on("disconnect", () => {
     for (let [userId, sockId] of onlineUsers.entries()) {
       if (sockId === socket.id) {
@@ -70,6 +70,25 @@ socket.on("stop_typing", ({ senderId, receiverId }) => {
         break;
       }
     }
+  });
+
+    // user comes online
+  socket.on("add_user", (userId) => {
+    onlineUsers.set(userId, socket.id);
+
+    io.emit("online_users", Array.from(onlineUsers.keys()));
+  });
+
+  // disconnect = offline
+  socket.on("disconnect", () => {
+    for (let [userId, socketId] of onlineUsers) {
+      if (socketId === socket.id) {
+        onlineUsers.delete(userId);
+        break;
+      }
+    }
+
+    io.emit("online_users", Array.from(onlineUsers.keys()));
   });
 });
 

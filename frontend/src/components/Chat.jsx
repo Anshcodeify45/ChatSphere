@@ -3,7 +3,7 @@ import axios from "axios";
 import { socket } from "../socket";
 import Messageinput from "./Messageinput";
 
-// ✅ CSS as const
+// typing CSS
 const typingCSS = `
 .dot {
   width: 6px;
@@ -14,27 +14,21 @@ const typingCSS = `
   animation: bounce 1.2s infinite ease-in-out;
 }
 
-.dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.dot:nth-child(3) {
-  animation-delay: 0.4s;
-}
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
 
 @keyframes bounce {
-  0%, 80%, 100% {
-    transform: scale(0.6);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 1;
-  }
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 `;
 
-function Chat({ selectedUser }) {
+function Chat({ selectedUser, onlineUsers = [] }) {
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef(null);
@@ -42,37 +36,31 @@ function Chat({ selectedUser }) {
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const senderId = currentUser?._id;
   const receiverId = selectedUser?._id;
+  const isOnline = onlineUsers.includes(selectedUser?._id);
 
-  // ✅ Inject CSS ONCE
+  // inject css
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = typingCSS;
     document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
+    return () => document.head.removeChild(style);
   }, []);
 
-  // ✅ FETCH MESSAGES
+  // fetch messages
   useEffect(() => {
     const fetchMessages = async () => {
       if (!senderId || !receiverId) return;
 
-      try {
-        const res = await axios.get(
-          `http://localhost:8080/api/messages/${senderId}/${receiverId}`
-        );
-        setMessages(res.data);
-      } catch (err) {
-        console.log(err);
-      }
+      const res = await axios.get(
+        `http://localhost:8080/api/messages/${senderId}/${receiverId}`
+      );
+      setMessages(res.data);
     };
 
     fetchMessages();
   }, [senderId, receiverId]);
 
-  // ✅ SOCKET: RECEIVE MESSAGE
+  // receive message
   useEffect(() => {
     const handler = (data) => {
       const isChat =
@@ -84,9 +72,8 @@ function Chat({ selectedUser }) {
       if (!isChat) return;
 
       setMessages((prev) => {
-        const exists = prev.some((msg) => msg._id === data._id);
-        if (exists) return prev;
-        return [...prev, data];
+        const exists = prev.some((m) => m._id === data._id);
+        return exists ? prev : [...prev, data];
       });
     };
 
@@ -94,18 +81,14 @@ function Chat({ selectedUser }) {
     return () => socket.off("receive_message", handler);
   }, [senderId, receiverId]);
 
-  // ✅ SOCKET: TYPING
+  // typing
   useEffect(() => {
     socket.on("typing", ({ senderId }) => {
-      if (String(senderId) === String(receiverId)) {
-        setIsTyping(true);
-      }
+      if (String(senderId) === String(receiverId)) setIsTyping(true);
     });
 
     socket.on("stop_typing", ({ senderId }) => {
-      if (String(senderId) === String(receiverId)) {
-        setIsTyping(false);
-      }
+      if (String(senderId) === String(receiverId)) setIsTyping(false);
     });
 
     return () => {
@@ -114,27 +97,10 @@ function Chat({ selectedUser }) {
     };
   }, [receiverId]);
 
-  // ✅ AUTO SCROLL
+  // auto scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
-
-  // ✅ EMPTY STATE
-  if (!selectedUser) {
-    return (
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          color: "white",
-        }}
-      >
-        Select a user to start chat
-      </div>
-    );
-  }
 
   return (
     <div
@@ -145,26 +111,88 @@ function Chat({ selectedUser }) {
         height: "100%",
       }}
     >
-      {/* HEADER */}
+      {/*  HEADER (PROFILE SECTION) */}
       <div
         style={{
-          padding: "12px",
-          borderBottom: "1px solid #333",
+          padding: "12px 16px",
+          borderBottom: "1px solid #1f2937",
           color: "white",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "linear-gradient(90deg, #0f172a, #111827)",
         }}
       >
-        {selectedUser.name}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* avatar */}
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              background: "#2563eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: "bold",
+            }}
+          >
+            {selectedUser.name?.charAt(0).toUpperCase()}
+          </div>
+
+          {/* name */}
+          <div>
+            <div style={{ fontSize: "15px", fontWeight: "bold" }}>
+              {selectedUser.name}
+            </div>
+            <div style={{ fontSize: "12px", color: "#9ca3af", display: "flex", alignItems: "center", gap: "6px" }}>
+                    {isTyping ? (
+                      "typing..."
+                    ) : isOnline ? (
+                      <>
+                        <span
+                          style={{
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            background: "#22c55e",
+                            display: "inline-block",
+                          }}
+                        />
+                        online
+                      </>
+                    ) : (
+                      <>
+                        <span
+                          style={{
+                            width: "8px",
+                            height: "8px",
+                            borderRadius: "50%",
+                            background: "#6b7280",
+                            display: "inline-block",
+                          }}
+                        />
+                        offline
+                      </>
+                    )}
+                  </div>
+          </div>
+        </div>
+
+        <div style={{ color: "#9ca3af" }}>⋮</div>
       </div>
 
-      {/* CHAT BODY */}
+      {/*  CHAT BODY */}
       <div
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: "10px",
+          padding: "12px",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "flex-end",
+          gap: "6px",
+          background:
+            "radial-gradient(circle at top, #0f172a, #020617)",
         }}
       >
         {messages.map((msg) => {
@@ -176,16 +204,20 @@ function Chat({ selectedUser }) {
               style={{
                 display: "flex",
                 justifyContent: isMe ? "flex-end" : "flex-start",
-                marginBottom: "8px",
+                animation: "fadeIn 0.2s ease-in-out",
               }}
             >
               <div
                 style={{
-                  background: isMe ? "#2563eb" : "#374151",
-                  padding: "10px",
-                  borderRadius: "10px",
-                  maxWidth: "60%",
+                  background: isMe ? "#2563eb" : "#1f2937",
+                  padding: "10px 12px",
+                  borderRadius: isMe
+                    ? "14px 14px 4px 14px"
+                    : "14px 14px 14px 4px",
+                  maxWidth: "65%",
                   color: "white",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                  wordBreak: "break-word",
                 }}
               >
                 {msg.text}
@@ -194,7 +226,8 @@ function Chat({ selectedUser }) {
                   style={{
                     fontSize: "10px",
                     marginTop: "4px",
-                    opacity: 0.7,
+                    opacity: 0.6,
+                    textAlign: "right",
                   }}
                 >
                   {msg.createdAt
@@ -209,12 +242,12 @@ function Chat({ selectedUser }) {
           );
         })}
 
-        {/* ✅ TYPING BUBBLE */}
+        {/* typing indicator */}
         {isTyping && (
-          <div style={{ display: "flex", marginTop: "5px" }}>
+          <div style={{ display: "flex" }}>
             <div
               style={{
-                background: "#374151",
+                background: "#1f2937",
                 padding: "10px 14px",
                 borderRadius: "12px",
                 display: "flex",

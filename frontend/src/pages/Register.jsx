@@ -29,7 +29,7 @@ function Register() {
         background: "#020617",
       }}
     >
-      {/* 🔥 LEFT SIDE (REGISTER FORM) */}
+      {/* LEFT SIDE  */}
       <div
         style={{
           width: "40%",
@@ -62,7 +62,7 @@ function Register() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             style={{
-              width: "100%",
+              width: "93%",
               padding: "12px",
               marginBottom: "15px",
               borderRadius: "8px",
@@ -80,7 +80,7 @@ function Register() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             style={{
-              width: "100%",
+              width: "93%",
               padding: "12px",
               marginBottom: "15px",
               borderRadius: "8px",
@@ -98,7 +98,7 @@ function Register() {
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             style={{
-              width: "100%",
+              width: "93%",
               padding: "12px",
               marginBottom: "20px",
               borderRadius: "8px",
@@ -146,7 +146,7 @@ function Register() {
         </div>
       </div>
 
-      {/* 🔥 RIGHT SIDE (IMAGE SAME AS LOGIN) */}
+      {/* RIGHT SIDE */}
       <div
         style={{
           width: "60%",
@@ -163,7 +163,6 @@ function Register() {
           }}
         />
 
-        {/* overlay for smooth blend */}
         <div
           style={{
             position: "absolute",

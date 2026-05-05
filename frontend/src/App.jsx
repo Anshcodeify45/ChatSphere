@@ -12,7 +12,7 @@ function AppLayout() {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // ✅ Register user globally
+  // Register user globally
   useEffect(() => {
     if (user?._id) {
       socket.emit("add_user", user._id);
@@ -28,19 +28,19 @@ function AppLayout() {
     <>
       {!hideNavbar && <Navbar />}
 
-      <Routes>
-        <Route path="/" element={user ? <Dashboard /> : <Login />} />
-        <Route path="/register" element={!user ? <Register /> : <Dashboard />} />
+     <Routes>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
 
-         <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+  <Route path="/login" element={<Login />} />
+  <Route path="/register" element={<Register />} />
+</Routes>
     </>
   );
 }
