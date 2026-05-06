@@ -13,7 +13,7 @@ function Register() {
 
   const handleRegister = async () => {
     try {
-      await axios.post("http://localhost:8080/api/auth/register", form);
+      await axios.post("https://chatsphere-s39q.onrender.com/api/auth/register", form);
       navigate("/");
     } catch (err) {
       alert("Registration failed");

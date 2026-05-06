@@ -10,7 +10,7 @@ const currentUserId = user?._id;
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/api/auth/users")
+      .get("https://chatsphere-s39q.onrender.com/api/auth/users")
       .then((res) => {
         // ❌ remove yourself from list
         const filtered = res.data.filter(

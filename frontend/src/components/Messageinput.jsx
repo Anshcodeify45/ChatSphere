@@ -18,7 +18,7 @@ function Messageinput({ senderId, receiverId, setMessages }) {
 
     try {
       const res = await axios.post(
-        "http://localhost:8080/api/messages",
+        "https://chatsphere-s39q.onrender.com/api/messages",
         msgData
       );
 

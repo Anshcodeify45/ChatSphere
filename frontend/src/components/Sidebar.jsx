@@ -16,7 +16,7 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
     if (!senderId) return;
 
     axios
-      .get(`http://localhost:8080/api/messages/conversations/${senderId}`)
+      .get(`https://chatsphere-s39q.onrender.com/api/messages/conversations/${senderId}`)
       .then((res) => {
         const filteredUsers = res.data.filter(
           (user) => String(user._id) !== String(senderId)

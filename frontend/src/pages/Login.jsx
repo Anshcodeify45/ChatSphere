@@ -8,7 +8,7 @@ function Login() {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post("http://localhost:8080/api/auth/login", form);
+      const res = await axios.post("https://chatsphere-s39q.onrender.com/api/auth/login", form);
       localStorage.setItem("user", JSON.stringify(res.data));
        window.location.href = "/";
     } catch (err) {

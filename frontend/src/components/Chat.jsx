@@ -52,7 +52,7 @@ function Chat({ selectedUser, onlineUsers = [] }) {
       if (!senderId || !receiverId) return;
 
       const res = await axios.get(
-        `http://localhost:8080/api/messages/${senderId}/${receiverId}`
+        `https://chatsphere-s39q.onrender.com/api/messages/${senderId}/${receiverId}`
       );
       setMessages(res.data);
     };
