@@ -12,32 +12,36 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
   const senderId = currentUser?._id;
 
   // FETCH CONVERSATIONS
-  const fetchConversations = () => {
+ const fetchConversations = async () => {
+  try {
     if (!senderId) return;
 
-    axios
-      .get(`https://chatsphere-s39q.onrender.com/api/messages/conversations/${senderId}`)
-      .then((res) => {
-        const filteredUsers = res.data.filter(
-          (user) => String(user._id) !== String(senderId)
-        );
+    const res = await axios.get(
+      `https://chatsphere-s39q.onrender.com/api/messages/conversations/${senderId}`
+    );
 
-        setUsers(filteredUsers);
+    console.log("CONVERSATIONS:", res.data);
 
-        const tempMessages = {};
-        const tempUnread = {};
+    const filteredUsers = res.data.filter(
+      (user) => String(user._id) !== String(senderId)
+    );
 
-        filteredUsers.forEach((user) => {
-          tempMessages[user._id] = "Start chatting...";
-          tempUnread[user._id] = 0;
-        });
+    setUsers(filteredUsers);
 
-        setLastMessages(tempMessages);
-        setUnread(tempUnread);
-      })
-      .catch((err) => console.log(err));
-  };
+    const tempMessages = {};
+    const tempUnread = {};
 
+    filteredUsers.forEach((user) => {
+      tempMessages[user._id] = "Start chatting...";
+      tempUnread[user._id] = 0;
+    });
+
+    setLastMessages(tempMessages);
+    setUnread(tempUnread);
+  } catch (err) {
+    console.log("FETCH CONVERSATIONS ERROR:", err.response?.data || err.message);
+  }
+};
   useEffect(() => {
     fetchConversations();
   }, [senderId]);

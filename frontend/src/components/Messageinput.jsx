@@ -8,31 +8,42 @@ function Messageinput({ senderId, receiverId, setMessages }) {
 
 
   const sendMessage = async () => {
-    if (!message.trim()) return;
+  if (!message.trim()) return;
 
-    const msgData = {
-      senderId,
-      receiverId,
-      text: message,
-    };
-
-    try {
-      const res = await axios.post(
-        "https://chatsphere-s39q.onrender.com/api/messages",
-        msgData
-      );
-
-      const savedMessage = res.data;
-
-      setMessages((prev) => [...prev, savedMessage]);
-
-      socket.emit("send_message", savedMessage);
-      socket.emit("refresh_sidebar");
-      setMessage("");
-    } catch (err) {
-      console.log(err);
-    }
+  const msgData = {
+    senderId,
+    receiverId,
+    text: message,
   };
+
+  try {
+    const res = await axios.post(
+      "https://chatsphere-s39q.onrender.com/api/messages",
+      msgData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const savedMessage = res.data;
+
+    console.log("MESSAGE SENT:", savedMessage);
+
+    // update UI immediately
+    setMessages((prev) => [...prev, savedMessage]);
+
+    // socket emit (real-time)
+    socket.emit("send_message", savedMessage);
+
+    socket.emit("refresh_sidebar");
+
+    setMessage("");
+  } catch (err) {
+    console.log("SEND MESSAGE ERROR:", err.response?.data || err.message);
+  }
+};
 
   //Enter to send
   const handleKeyDown = (e) => {

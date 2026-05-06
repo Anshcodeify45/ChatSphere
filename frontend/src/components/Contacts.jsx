@@ -8,18 +8,27 @@ function Contacts({ setSelectedUser }) {
   const user = JSON.parse(localStorage.getItem("user"));
 const currentUserId = user?._id;
 
-  useEffect(() => {
-    axios
-      .get("https://chatsphere-s39q.onrender.com/api/auth/users")
-      .then((res) => {
-        // ❌ remove yourself from list
-        const filtered = res.data.filter(
-          (user) => user._id !== currentUserId
-        );
-        setUsers(filtered);
-      })
-      .catch((err) => console.log(err));
-  }, []);
+ useEffect(() => {
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get(
+        "https://chatsphere-s39q.onrender.com/api/auth/users"
+      );
+
+      console.log("USERS:", res.data);
+
+      const filtered = res.data.filter(
+        (user) => user._id !== currentUserId
+      );
+
+      setUsers(filtered);
+    } catch (err) {
+      console.log("FETCH USERS ERROR:", err.response?.data || err.message);
+    }
+  };
+
+  fetchUsers();
+}, [currentUserId]);
 
   // 🔍 Search filter
   const filteredUsers = users.filter((user) =>

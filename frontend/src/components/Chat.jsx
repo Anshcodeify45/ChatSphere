@@ -47,18 +47,24 @@ function Chat({ selectedUser, onlineUsers = [] }) {
   }, []);
 
   // fetch messages
-  useEffect(() => {
-    const fetchMessages = async () => {
+ useEffect(() => {
+  const fetchMessages = async () => {
+    try {
       if (!senderId || !receiverId) return;
 
       const res = await axios.get(
         `https://chatsphere-s39q.onrender.com/api/messages/${senderId}/${receiverId}`
       );
-      setMessages(res.data);
-    };
 
-    fetchMessages();
-  }, [senderId, receiverId]);
+      console.log("MESSAGES:", res.data);
+      setMessages(res.data);
+    } catch (err) {
+      console.log("FETCH MESSAGES ERROR:", err.response?.data || err.message);
+    }
+  };
+
+  fetchMessages();
+}, [senderId, receiverId]);
 
   // receive message
   useEffect(() => {

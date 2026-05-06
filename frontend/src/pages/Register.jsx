@@ -11,14 +11,32 @@ function Register() {
 
   const navigate = useNavigate();
 
-  const handleRegister = async () => {
-    try {
-      await axios.post("https://chatsphere-s39q.onrender.com/api/auth/register", form);
-      navigate("/");
-    } catch (err) {
-      alert("Registration failed");
-    }
-  };
+const handleRegister = async () => {
+  try {
+    const res = await axios.post(
+      "https://chatsphere-s39q.onrender.com/api/auth/register",
+      form,
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("REGISTER RESPONSE:", res.data);
+
+    // optional: store user after register (if backend returns user + token)
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+
+    navigate("/");
+  } catch (err) {
+    console.log("REGISTER ERROR:", err.response?.data || err.message);
+
+    alert(
+      err.response?.data?.message || "Registration failed. Check console."
+    );
+  }
+};
 
   return (
     <div

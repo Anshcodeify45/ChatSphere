@@ -7,14 +7,30 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    try {
-      const res = await axios.post("https://chatsphere-s39q.onrender.com/api/auth/login", form);
-      localStorage.setItem("user", JSON.stringify(res.data));
-       window.location.href = "/";
-    } catch (err) {
-      alert("Invalid credentials");
-    }
-  };
+  try {
+    const res = await axios.post(
+      "https://chatsphere-s39q.onrender.com/api/auth/login",
+      form,
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("LOGIN RESPONSE:", res.data);
+
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+
+    window.location.href = "/";
+  } catch (err) {
+    console.log("LOGIN ERROR:", err.response?.data || err.message);
+
+    alert(
+      err.response?.data?.message || "Login failed. Check console for details."
+    );
+  }
+};
 
   return (
     <div
