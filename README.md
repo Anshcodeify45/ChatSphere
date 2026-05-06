@@ -52,8 +52,8 @@ ChatSphere/
 │   └── package.json
 
 ⚙️ Installation & Setup
-🔹 1. Clone the Repository
-git clone https://github.com/your-username/chatsphere.git
+🔹 1. Clone the Repository https://github.com/Anshcodeify45/ChatSphere
+git clone 
 cd chatsphere
 🔹 2. Setup Backend
 cd backend
