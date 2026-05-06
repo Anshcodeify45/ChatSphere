@@ -2,17 +2,9 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { socket } from "../socket";
 import Messageinput from "./Messageinput";
+import { getUser } from "../utils/auth";
 
-// safe user getter (FIX FOR JSON ERROR)
-const getUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    return null;
-  }
-};
-
-// typing CSS
+// typing CSS (FIXED)
 const typingCSS = `
 .dot {
   width: 6px;
@@ -42,7 +34,7 @@ function Chat({ selectedUser, onlineUsers = [] }) {
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef(null);
 
-  const currentUser = getUser(); // ✅ SAFE FIX
+  const currentUser = getUser(); // ✅ ONLY ONCE
   const senderId = currentUser?._id;
   const receiverId = selectedUser?._id;
   const isOnline = onlineUsers.includes(selectedUser?._id);
@@ -116,7 +108,6 @@ function Chat({ selectedUser, onlineUsers = [] }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // ⚠️ prevent crash
   if (!currentUser) {
     return <div style={{ color: "white", padding: "20px" }}>Loading...</div>;
   }
@@ -215,7 +206,6 @@ function Chat({ selectedUser, onlineUsers = [] }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* INPUT */}
       <Messageinput
         senderId={senderId}
         receiverId={receiverId}

@@ -1,36 +1,43 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { saveUser } from "../utils/auth";
 
 function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-  try {
-    const res = await axios.post(
-      "https://chatsphere-s39q.onrender.com/api/auth/login",
-      form,
-      {
-        headers: {
-          "Content-Type": "application/json"
-        }
+    try {
+      // validation
+      if (!form.email || !form.password) {
+        alert("Please fill all fields");
+        return;
       }
-    );
 
-    console.log("LOGIN RESPONSE:", res.data);
+      const res = await axios.post(
+        "https://chatsphere-s39q.onrender.com/api/auth/login",
+        form,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    localStorage.setItem("user", JSON.stringify(res.data.user));
+      console.log("LOGIN RESPONSE:", res.data);
 
-    window.location.href = "/";
-  } catch (err) {
-    console.log("LOGIN ERROR:", err.response?.data || err.message);
+      // ✅ SAFE SAVE (handles {user, token} or direct user object)
+      saveUser(res.data?.user || res.data);
 
-    alert(
-      err.response?.data?.message || "Login failed. Check console for details."
-    );
-  }
-};
+      // redirect
+      navigate("/");
+    } catch (err) {
+      console.log("LOGIN ERROR:", err.response?.data || err.message);
+
+      alert(err.response?.data?.message || "Invalid credentials");
+    }
+  };
 
   return (
     <div
@@ -41,7 +48,7 @@ function Login() {
         background: "#020617",
       }}
     >
-      {/*LEFT SIDE (LOGIN) */}
+      {/* LEFT SIDE */}
       <div
         style={{
           width: "40%",
@@ -63,16 +70,18 @@ function Login() {
             color: "white",
           }}
         >
-          <h2 style={{ textAlign: "center", marginBottom: "25px" ,color:"#FFFFFF"}}>
+          <h2 style={{ textAlign: "center", marginBottom: "25px" }}>
             ChatSphere Login
           </h2>
 
-          {/* Email */}
+          {/* EMAIL */}
           <input
             type="email"
             placeholder="Email"
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, email: e.target.value })
+            }
             style={{
               width: "93%",
               padding: "12px",
@@ -85,12 +94,14 @@ function Login() {
             }}
           />
 
-          {/* Password */}
+          {/* PASSWORD */}
           <input
             type="password"
             placeholder="Password"
             value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, password: e.target.value })
+            }
             style={{
               width: "93%",
               padding: "12px",
@@ -103,7 +114,7 @@ function Login() {
             }}
           />
 
-          {/* Button */}
+          {/* BUTTON */}
           <button
             onClick={handleLogin}
             style={{
@@ -115,15 +126,12 @@ function Login() {
               color: "white",
               fontWeight: "bold",
               cursor: "pointer",
-              transition: "0.3s",
             }}
-            onMouseOver={(e) => (e.target.style.background = "#1d4ed8")}
-            onMouseOut={(e) => (e.target.style.background = "#2563eb")}
           >
             Login
           </button>
 
-          {/* Register */}
+          {/* REGISTER */}
           <p
             style={{
               marginTop: "15px",
@@ -141,12 +149,7 @@ function Login() {
       </div>
 
       {/* RIGHT SIDE */}
-      <div
-        style={{
-          width: "60%",
-          position: "relative",
-        }}
-      >
+      <div style={{ width: "60%", position: "relative" }}>
         <img
           src="/login-bg.jpg"
           alt="background"
@@ -157,7 +160,6 @@ function Login() {
           }}
         />
 
-        
         <div
           style={{
             position: "absolute",

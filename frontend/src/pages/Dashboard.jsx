@@ -4,91 +4,86 @@ import Chat from "../components/Chat";
 import Contacts from "../components/Contacts";
 import WelcomeScreen from "../components/WelcomeScreen";
 import { socket } from "../socket";
+import { getUser } from "../utils/auth";
+
 function Dashboard() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
 
+  const currentUser = getUser();
 
-
+  // SOCKET: online users
   useEffect(() => {
-  socket.on("online_users", (users) => {
-    setOnlineUsers(users);
-  });
-
-  return () => socket.off("online_users");
-}, []);
-
-
-  useEffect(() => {
-  socket.on("receive_message", (msg) => {
-    const senderId = msg.senderId;
-
-    setContacts((prev) => {
-      const existing = prev.find(c => c._id === senderId);
-
-      // If contact already exists → update
-      if (existing) {
-        return prev.map(c =>
-          c._id === senderId
-            ? {
-                ...c,
-                lastMessage: msg.text,
-                unread: (c.unread || 0) + 1,
-              }
-            : c
-        );
-      }
-
-      // If NEW contact → add to sidebar
-      return [
-        {
-          _id: senderId,
-          name: msg.senderName || "New User",
-          lastMessage: msg.text,
-          unread: 1,
-        },
-        ...prev,
-      ];
+    socket.on("online_users", (users) => {
+      setOnlineUsers(users);
     });
-  });
 
-  return () => socket.off("receive_message");
-}, []);
+    return () => socket.off("online_users");
+  }, []);
 
-  // Restore on refresh
+  // SOCKET: new messages → update contacts sidebar
   useEffect(() => {
-    const savedUser = localStorage.getItem("selectedUser");
+    const handler = (msg) => {
+      const senderId = msg.senderId;
 
-    if (savedUser) {
+      setContacts((prev) => {
+        const exists = prev.find((c) => c._id === senderId);
+
+        if (exists) {
+          return prev.map((c) =>
+            c._id === senderId
+              ? {
+                  ...c,
+                  lastMessage: msg.text,
+                  unread: selectedUser?._id === senderId ? 0 : (c.unread || 0) + 1,
+                }
+              : c
+          );
+        }
+
+        return [
+          {
+            _id: senderId,
+            name: msg.senderName || "New User",
+            lastMessage: msg.text,
+            unread: 1,
+          },
+          ...prev,
+        ];
+      });
+    };
+
+    socket.on("receive_message", handler);
+
+    return () => socket.off("receive_message", handler);
+  }, [selectedUser]);
+
+  // restore selected user from storage
+  useEffect(() => {
+    const saved = localStorage.getItem("selectedUser");
+
+    if (saved && saved !== "undefined") {
       try {
-        setSelectedUser(JSON.parse(savedUser));
+        setSelectedUser(JSON.parse(saved));
       } catch {
         localStorage.removeItem("selectedUser");
-        setSelectedUser(null);
       }
     }
   }, []);
 
-  // HANDLE USER SELECT
-const handleSelectUser = (user) => {
-  setSelectedUser(user);
+  // handle user select
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
 
-  // reset unread
-  setContacts((prev) =>
-    prev.map((c) =>
-      c._id === user._id ? { ...c, unread: 0 } : c
-    )
-  );
+    setContacts((prev) =>
+      prev.map((c) =>
+        c._id === user._id ? { ...c, unread: 0 } : c
+      )
+    );
 
-  localStorage.setItem("selectedUser", JSON.stringify(user));
-};
-
-
-  useEffect(() => {
-    setSelectedUser(null);
-    localStorage.removeItem("selectedUser");
-  }, []);
+    localStorage.setItem("selectedUser", JSON.stringify(user));
+  };
 
   return (
     <div
@@ -100,7 +95,7 @@ const handleSelectUser = (user) => {
         fontFamily: "Arial",
       }}
     >
-      {/* LEFT PANEL */}
+      {/* LEFT SIDEBAR */}
       <div
         style={{
           width: "20%",
@@ -113,13 +108,13 @@ const handleSelectUser = (user) => {
         }}
       >
         <Sidebar
-            contacts={contacts}
-            setSelectedUser={handleSelectUser}
-            onlineUsers={onlineUsers}
-          />
+          contacts={contacts}
+          setSelectedUser={handleSelectUser}
+          onlineUsers={onlineUsers}
+        />
       </div>
 
-      {/* CENTER */}
+      {/* CHAT AREA */}
       <div
         style={{
           flex: 1,
@@ -129,13 +124,16 @@ const handleSelectUser = (user) => {
         }}
       >
         {selectedUser ? (
-          <Chat selectedUser={selectedUser}  onlineUsers={onlineUsers}/>
+          <Chat
+            selectedUser={selectedUser}
+            onlineUsers={onlineUsers}
+          />
         ) : (
           <WelcomeScreen />
         )}
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* RIGHT CONTACTS */}
       <div
         style={{
           width: "20%",

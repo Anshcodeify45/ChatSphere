@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
+import { saveUser } from "../utils/auth";
 
 function Register() {
   const [form, setForm] = useState({
@@ -11,32 +12,36 @@ function Register() {
 
   const navigate = useNavigate();
 
-const handleRegister = async () => {
-  try {
-    const res = await axios.post(
-      "https://chatsphere-s39q.onrender.com/api/auth/register",
-      form,
-      {
-        headers: {
-          "Content-Type": "application/json"
-        }
+  const handleRegister = async () => {
+    try {
+      // validation
+      if (!form.name || !form.email || !form.password) {
+        alert("Please fill all fields");
+        return;
       }
-    );
 
-    console.log("REGISTER RESPONSE:", res.data);
+      const res = await axios.post(
+        "https://chatsphere-s39q.onrender.com/api/auth/register",
+        form,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    // optional: store user after register (if backend returns user + token)
-    localStorage.setItem("user", JSON.stringify(res.data.user));
+      console.log("REGISTER RESPONSE:", res.data);
 
-    navigate("/");
-  } catch (err) {
-    console.log("REGISTER ERROR:", err.response?.data || err.message);
+      // ✅ SAFE SAVE (handles both {user} or direct user object)
+      saveUser(res.data?.user || res.data);
 
-    alert(
-      err.response?.data?.message || "Registration failed. Check console."
-    );
-  }
-};
+      navigate("/");
+    } catch (err) {
+      console.log("REGISTER ERROR:", err.response?.data || err.message);
+
+      alert(err.response?.data?.message || "Register failed");
+    }
+  };
 
   return (
     <div
@@ -47,7 +52,7 @@ const handleRegister = async () => {
         background: "#020617",
       }}
     >
-      {/* LEFT SIDE  */}
+      {/* LEFT SIDE */}
       <div
         style={{
           width: "40%",
@@ -69,16 +74,18 @@ const handleRegister = async () => {
             color: "white",
           }}
         >
-          <h2 style={{ textAlign: "center", marginBottom: "25px" ,color:"#FFFFFF"}}>
+          <h2 style={{ textAlign: "center", marginBottom: "25px" }}>
             Create Account
           </h2>
 
-          {/* Name */}
+          {/* NAME */}
           <input
             type="text"
             placeholder="Full Name"
             value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, name: e.target.value })
+            }
             style={{
               width: "93%",
               padding: "12px",
@@ -91,12 +98,14 @@ const handleRegister = async () => {
             }}
           />
 
-          {/* Email */}
+          {/* EMAIL */}
           <input
             type="email"
             placeholder="Email"
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, email: e.target.value })
+            }
             style={{
               width: "93%",
               padding: "12px",
@@ -109,12 +118,14 @@ const handleRegister = async () => {
             }}
           />
 
-          {/* Password */}
+          {/* PASSWORD */}
           <input
             type="password"
             placeholder="Password"
             value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, password: e.target.value })
+            }
             style={{
               width: "93%",
               padding: "12px",
@@ -127,7 +138,7 @@ const handleRegister = async () => {
             }}
           />
 
-          {/* Button */}
+          {/* BUTTON */}
           <button
             onClick={handleRegister}
             style={{
@@ -139,15 +150,12 @@ const handleRegister = async () => {
               color: "white",
               fontWeight: "bold",
               cursor: "pointer",
-              transition: "0.3s",
             }}
-            onMouseOver={(e) => (e.target.style.background = "#16a34a")}
-            onMouseOut={(e) => (e.target.style.background = "#22c55e")}
           >
             Register
           </button>
 
-          {/* Login Link */}
+          {/* LOGIN LINK */}
           <p
             style={{
               marginTop: "15px",
@@ -165,12 +173,7 @@ const handleRegister = async () => {
       </div>
 
       {/* RIGHT SIDE */}
-      <div
-        style={{
-          width: "60%",
-          position: "relative",
-        }}
-      >
+      <div style={{ width: "60%", position: "relative" }}>
         <img
           src="/login-bg.jpg"
           alt="background"

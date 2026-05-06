@@ -1,15 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { socket } from "../socket";
-
-// SAFE USER PARSER
-const getUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    return null;
-  }
-};
+import { getUser } from "../utils/auth";
 
 function Sidebar({ setSelectedUser, onlineUsers = [] }) {
   const [users, setUsers] = useState([]);
@@ -17,7 +9,7 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
   const [lastMessages, setLastMessages] = useState({});
   const [unread, setUnread] = useState({});
 
-  const currentUser = getUser(); // ✅ FIXED
+  const currentUser = getUser();
   const senderId = currentUser?._id;
 
   // FETCH CONVERSATIONS
@@ -30,7 +22,7 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
       );
 
       const filteredUsers = res.data.filter(
-        (user) => String(user._id) !== String(senderId)
+        (u) => String(u._id) !== String(senderId)
       );
 
       setUsers(filteredUsers);
@@ -38,9 +30,9 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
       const tempMessages = {};
       const tempUnread = {};
 
-      filteredUsers.forEach((user) => {
-        tempMessages[user._id] = "Start chatting...";
-        tempUnread[user._id] = 0;
+      filteredUsers.forEach((u) => {
+        tempMessages[u._id] = "Start chatting...";
+        tempUnread[u._id] = 0;
       });
 
       setLastMessages(tempMessages);
@@ -50,11 +42,12 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
     }
   };
 
+  // LOAD ON LOGIN
   useEffect(() => {
     fetchConversations();
   }, [senderId]);
 
-  // SOCKET REFRESH
+  // SOCKET REFRESH (SAFE)
   useEffect(() => {
     socket.on("refresh_sidebar", fetchConversations);
 
@@ -63,7 +56,7 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
     };
   }, [senderId]);
 
-  // RECEIVE MESSAGE (FIXED CLEANUP)
+  // RECEIVE MESSAGE (FIXED MEMORY SAFE)
   useEffect(() => {
     const handler = (msg) => {
       const sender = msg.senderId;
@@ -75,7 +68,7 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
           return [
             {
               _id: sender,
-              name: msg.senderName || "New User",
+              name: msg.senderName || "User",
             },
             ...prev,
           ];
@@ -119,7 +112,7 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      
+
       {/* HEADER */}
       <div style={{
         padding: "15px",
@@ -139,15 +132,15 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
           </p>
         )}
 
-        {users.map((user) => {
-          const isActive = activeUserId === user._id;
-          const unreadCount = unread[user._id] || 0;
-          const isOnline = onlineUsers.includes(user._id);
+        {users.map((u) => {
+          const isActive = activeUserId === u._id;
+          const unreadCount = unread[u._id] || 0;
+          const isOnline = onlineUsers.includes(u._id);
 
           return (
             <div
-              key={user._id}
-              onClick={() => handleClick(user)}
+              key={u._id}
+              onClick={() => handleClick(u)}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -159,9 +152,10 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
                 justifyContent: "space-between",
               }}
             >
+
               {/* LEFT */}
               <div style={{ display: "flex", alignItems: "center" }}>
-                
+
                 <div style={{ position: "relative", marginRight: "10px" }}>
                   <div style={{
                     width: "35px",
@@ -173,9 +167,8 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
                     justifyContent: "center",
                     fontWeight: "bold",
                     color: "white",
-                    position: "relative",
                   }}>
-                    {user.name?.charAt(0).toUpperCase()}
+                    {u.name?.charAt(0).toUpperCase()}
 
                     <span style={{
                       position: "absolute",
@@ -192,11 +185,11 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
 
                 <div>
                   <div style={{ color: "white", fontSize: "14px" }}>
-                    {user.name}
+                    {u.name}
                   </div>
 
                   <div style={{ color: "#9ca3af", fontSize: "12px" }}>
-                    {lastMessages[user._id] || "No messages"}
+                    {lastMessages[u._id] || "No messages"}
                   </div>
                 </div>
               </div>

@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-
-// SAFE USER GETTER (prevents JSON crash)
-const getUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    return null;
-  }
-};
+import { getUser } from "../utils/auth";
 
 function Contacts({ setSelectedUser }) {
   const [users, setUsers] = useState([]);
@@ -24,7 +16,7 @@ function Contacts({ setSelectedUser }) {
           "https://chatsphere-s39q.onrender.com/api/auth/users"
         );
 
-        const filtered = res.data.filter(
+        const filtered = (res.data || []).filter(
           (u) => u._id !== currentUserId
         );
 
@@ -42,9 +34,11 @@ function Contacts({ setSelectedUser }) {
     }
   }, [currentUserId]);
 
-  // search filter
+  // safe search filter
   const filteredUsers = users.filter((u) =>
-    u.name.toLowerCase().includes(search.toLowerCase())
+    (u?.name || "")
+      .toLowerCase()
+      .includes(search.toLowerCase())
   );
 
   return (
@@ -57,6 +51,7 @@ function Contacts({ setSelectedUser }) {
           fontSize: "18px",
           fontWeight: "bold",
           borderBottom: "1px solid #374151",
+          color: "white",
         }}
       >
         Contacts
@@ -116,13 +111,16 @@ function Contacts({ setSelectedUser }) {
                 justifyContent: "center",
                 marginRight: "10px",
                 fontWeight: "bold",
+                color: "white",
               }}
             >
-              {u.name?.charAt(0).toUpperCase()}
+              {u?.name?.charAt(0)?.toUpperCase()}
             </div>
 
             {/* Name */}
-            <span>{u.name}</span>
+            <span style={{ color: "white" }}>
+              {u?.name}
+            </span>
           </div>
         ))}
       </div>
