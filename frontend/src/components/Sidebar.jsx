@@ -2,46 +2,54 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { socket } from "../socket";
 
+// SAFE USER PARSER
+const getUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+};
+
 function Sidebar({ setSelectedUser, onlineUsers = [] }) {
   const [users, setUsers] = useState([]);
   const [activeUserId, setActiveUserId] = useState(null);
   const [lastMessages, setLastMessages] = useState({});
   const [unread, setUnread] = useState({});
 
-  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const currentUser = getUser(); // ✅ FIXED
   const senderId = currentUser?._id;
 
   // FETCH CONVERSATIONS
- const fetchConversations = async () => {
-  try {
-    if (!senderId) return;
+  const fetchConversations = async () => {
+    try {
+      if (!senderId) return;
 
-    const res = await axios.get(
-      `https://chatsphere-s39q.onrender.com/api/messages/conversations/${senderId}`
-    );
+      const res = await axios.get(
+        `https://chatsphere-s39q.onrender.com/api/messages/conversations/${senderId}`
+      );
 
-    console.log("CONVERSATIONS:", res.data);
+      const filteredUsers = res.data.filter(
+        (user) => String(user._id) !== String(senderId)
+      );
 
-    const filteredUsers = res.data.filter(
-      (user) => String(user._id) !== String(senderId)
-    );
+      setUsers(filteredUsers);
 
-    setUsers(filteredUsers);
+      const tempMessages = {};
+      const tempUnread = {};
 
-    const tempMessages = {};
-    const tempUnread = {};
+      filteredUsers.forEach((user) => {
+        tempMessages[user._id] = "Start chatting...";
+        tempUnread[user._id] = 0;
+      });
 
-    filteredUsers.forEach((user) => {
-      tempMessages[user._id] = "Start chatting...";
-      tempUnread[user._id] = 0;
-    });
+      setLastMessages(tempMessages);
+      setUnread(tempUnread);
+    } catch (err) {
+      console.log("FETCH CONVERSATIONS ERROR:", err.message);
+    }
+  };
 
-    setLastMessages(tempMessages);
-    setUnread(tempUnread);
-  } catch (err) {
-    console.log("FETCH CONVERSATIONS ERROR:", err.response?.data || err.message);
-  }
-};
   useEffect(() => {
     fetchConversations();
   }, [senderId]);
@@ -49,12 +57,15 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
   // SOCKET REFRESH
   useEffect(() => {
     socket.on("refresh_sidebar", fetchConversations);
-    return () => socket.off("refresh_sidebar", fetchConversations);
-  }, []);
 
-  // RECEIVE MESSAGE
+    return () => {
+      socket.off("refresh_sidebar", fetchConversations);
+    };
+  }, [senderId]);
+
+  // RECEIVE MESSAGE (FIXED CLEANUP)
   useEffect(() => {
-    socket.on("receive_message", (msg) => {
+    const handler = (msg) => {
       const sender = msg.senderId;
 
       setUsers((prev) => {
@@ -86,9 +97,13 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
           [sender]: (prev[sender] || 0) + 1,
         };
       });
-    });
+    };
 
-    return () => socket.off("receive_message");
+    socket.on("receive_message", handler);
+
+    return () => {
+      socket.off("receive_message", handler);
+    };
   }, [activeUserId]);
 
   // CLICK USER
@@ -104,16 +119,15 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      
       {/* HEADER */}
-      <div
-        style={{
-          padding: "15px",
-          fontSize: "18px",
-          fontWeight: "bold",
-          borderBottom: "1px solid #374151",
-          color: "white",
-        }}
-      >
+      <div style={{
+        padding: "15px",
+        fontSize: "18px",
+        fontWeight: "bold",
+        borderBottom: "1px solid #374151",
+        color: "white",
+      }}>
         Chats
       </div>
 
@@ -128,7 +142,7 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
         {users.map((user) => {
           const isActive = activeUserId === user._id;
           const unreadCount = unread[user._id] || 0;
-          const isOnline = onlineUsers.includes(user._id); // ✅ FIXED
+          const isOnline = onlineUsers.includes(user._id);
 
           return (
             <div
@@ -145,43 +159,37 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
                 justifyContent: "space-between",
               }}
             >
-              {/* LEFT SIDE */}
+              {/* LEFT */}
               <div style={{ display: "flex", alignItems: "center" }}>
-                {/* AVATAR */}
+                
                 <div style={{ position: "relative", marginRight: "10px" }}>
-                  <div
-                    style={{
-                      width: "35px",
-                      height: "35px",
-                      borderRadius: "50%",
-                      background: "#4b5563",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: "bold",
-                      color: "white",
-                      position: "relative",
-                    }}
-                  >
-                    {user.name.charAt(0).toUpperCase()}
+                  <div style={{
+                    width: "35px",
+                    height: "35px",
+                    borderRadius: "50%",
+                    background: "#4b5563",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: "bold",
+                    color: "white",
+                    position: "relative",
+                  }}>
+                    {user.name?.charAt(0).toUpperCase()}
 
-                    {/* ONLINE DOT */}
-                    <span
-                      style={{
-                        position: "absolute",
-                        bottom: 0,
-                        right: 0,
-                        width: "10px",
-                        height: "10px",
-                        borderRadius: "50%",
-                        background: isOnline ? "#22c55e" : "#6b7280",
-                        border: "2px solid #111827",
-                      }}
-                    />
+                    <span style={{
+                      position: "absolute",
+                      bottom: 0,
+                      right: 0,
+                      width: "10px",
+                      height: "10px",
+                      borderRadius: "50%",
+                      background: isOnline ? "#22c55e" : "#6b7280",
+                      border: "2px solid #111827",
+                    }} />
                   </div>
                 </div>
 
-                {/* NAME + LAST MSG */}
                 <div>
                   <div style={{ color: "white", fontSize: "14px" }}>
                     {user.name}
@@ -195,15 +203,13 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
 
               {/* UNREAD */}
               {unreadCount > 0 && (
-                <div
-                  style={{
-                    background: "#ef4444",
-                    color: "white",
-                    borderRadius: "50%",
-                    padding: "3px 7px",
-                    fontSize: "12px",
-                  }}
-                >
+                <div style={{
+                  background: "#ef4444",
+                  color: "white",
+                  borderRadius: "50%",
+                  padding: "3px 7px",
+                  fontSize: "12px",
+                }}>
                   {unreadCount}
                 </div>
               )}

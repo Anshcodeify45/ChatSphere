@@ -1,55 +1,62 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+// SAFE USER GETTER (prevents JSON crash)
+const getUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+};
+
 function Contacts({ setSelectedUser }) {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
 
-  const user = JSON.parse(localStorage.getItem("user"));
-const currentUserId = user?._id;
+  const user = getUser();
+  const currentUserId = user?._id;
 
- useEffect(() => {
-  const fetchUsers = async () => {
-    try {
-      const res = await axios.get(
-        "https://chatsphere-s39q.onrender.com/api/auth/users"
-      );
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await axios.get(
+          "https://chatsphere-s39q.onrender.com/api/auth/users"
+        );
 
-      console.log("USERS:", res.data);
+        const filtered = res.data.filter(
+          (u) => u._id !== currentUserId
+        );
 
-      const filtered = res.data.filter(
-        (user) => user._id !== currentUserId
-      );
+        setUsers(filtered);
+      } catch (err) {
+        console.log(
+          "FETCH USERS ERROR:",
+          err.response?.data || err.message
+        );
+      }
+    };
 
-      setUsers(filtered);
-    } catch (err) {
-      console.log("FETCH USERS ERROR:", err.response?.data || err.message);
+    if (currentUserId) {
+      fetchUsers();
     }
-  };
+  }, [currentUserId]);
 
-  fetchUsers();
-}, [currentUserId]);
-
-  // 🔍 Search filter
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(search.toLowerCase())
+  // search filter
+  const filteredUsers = users.filter((u) =>
+    u.name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div
-      style={{
-        height: "100%",
-        display: "flex",
-        flexDirection: "column"
-      }}
-    >
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+
       {/* Header */}
       <div
         style={{
           padding: "15px",
           fontSize: "18px",
           fontWeight: "bold",
-          borderBottom: "1px solid #374151"
+          borderBottom: "1px solid #374151",
         }}
       >
         Contacts
@@ -69,24 +76,24 @@ const currentUserId = user?._id;
             border: "none",
             outline: "none",
             background: "#1e293b",
-            color: "white"
+            color: "white",
           }}
         />
       </div>
 
-      {/* Contact List */}
+      {/* List */}
       <div
         className="hide-scrollbar"
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: "10px"
+          padding: "10px",
         }}
       >
-        {filteredUsers.map((user) => (
+        {filteredUsers.map((u) => (
           <div
-            key={user._id}
-            onClick={() => setSelectedUser(user)}
+            key={u._id}
+            onClick={() => setSelectedUser(u)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -94,7 +101,7 @@ const currentUserId = user?._id;
               marginBottom: "8px",
               borderRadius: "8px",
               cursor: "pointer",
-              background: "#1e293b"
+              background: "#1e293b",
             }}
           >
             {/* Avatar */}
@@ -108,14 +115,14 @@ const currentUserId = user?._id;
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: "10px",
-                fontWeight: "bold"
+                fontWeight: "bold",
               }}
             >
-              {user.name.charAt(0).toUpperCase()}
+              {u.name?.charAt(0).toUpperCase()}
             </div>
 
             {/* Name */}
-            <span>{user.name}</span>
+            <span>{u.name}</span>
           </div>
         ))}
       </div>

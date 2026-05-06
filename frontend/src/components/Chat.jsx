@@ -3,6 +3,15 @@ import axios from "axios";
 import { socket } from "../socket";
 import Messageinput from "./Messageinput";
 
+// safe user getter (FIX FOR JSON ERROR)
+const getUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    return null;
+  }
+};
+
 // typing CSS
 const typingCSS = `
 .dot {
@@ -33,7 +42,7 @@ function Chat({ selectedUser, onlineUsers = [] }) {
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef(null);
 
-  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const currentUser = getUser(); // ✅ SAFE FIX
   const senderId = currentUser?._id;
   const receiverId = selectedUser?._id;
   const isOnline = onlineUsers.includes(selectedUser?._id);
@@ -47,24 +56,23 @@ function Chat({ selectedUser, onlineUsers = [] }) {
   }, []);
 
   // fetch messages
- useEffect(() => {
-  const fetchMessages = async () => {
-    try {
-      if (!senderId || !receiverId) return;
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        if (!senderId || !receiverId) return;
 
-      const res = await axios.get(
-        `https://chatsphere-s39q.onrender.com/api/messages/${senderId}/${receiverId}`
-      );
+        const res = await axios.get(
+          `https://chatsphere-s39q.onrender.com/api/messages/${senderId}/${receiverId}`
+        );
 
-      console.log("MESSAGES:", res.data);
-      setMessages(res.data);
-    } catch (err) {
-      console.log("FETCH MESSAGES ERROR:", err.response?.data || err.message);
-    }
-  };
+        setMessages(res.data);
+      } catch (err) {
+        console.log("FETCH MESSAGES ERROR:", err.message);
+      }
+    };
 
-  fetchMessages();
-}, [senderId, receiverId]);
+    fetchMessages();
+  }, [senderId, receiverId]);
 
   // receive message
   useEffect(() => {
@@ -108,158 +116,95 @@ function Chat({ selectedUser, onlineUsers = [] }) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
+  // ⚠️ prevent crash
+  if (!currentUser) {
+    return <div style={{ color: "white", padding: "20px" }}>Loading...</div>;
+  }
+
   return (
-    <div
-      style={{
-        flex: 1,
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%" }}>
+
+      {/* HEADER */}
+      <div style={{
+        padding: "12px 16px",
+        borderBottom: "1px solid #1f2937",
+        color: "white",
         display: "flex",
-        flexDirection: "column",
-        height: "100%",
-      }}
-    >
-      {/*  HEADER (PROFILE SECTION) */}
-      <div
-        style={{
-          padding: "12px 16px",
-          borderBottom: "1px solid #1f2937",
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: "linear-gradient(90deg, #0f172a, #111827)",
-        }}
-      >
+        alignItems: "center",
+        justifyContent: "space-between",
+        background: "linear-gradient(90deg, #0f172a, #111827)",
+      }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          {/* avatar */}
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              background: "#2563eb",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: "bold",
-            }}
-          >
-            {selectedUser.name?.charAt(0).toUpperCase()}
+
+          <div style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "50%",
+            background: "#2563eb",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: "bold",
+          }}>
+            {selectedUser?.name?.charAt(0)?.toUpperCase()}
           </div>
 
-          {/* name */}
           <div>
             <div style={{ fontSize: "15px", fontWeight: "bold" }}>
-              {selectedUser.name}
+              {selectedUser?.name}
             </div>
-            <div style={{ fontSize: "12px", color: "#9ca3af", display: "flex", alignItems: "center", gap: "6px" }}>
-                    {isTyping ? (
-                      "typing..."
-                    ) : isOnline ? (
-                      <>
-                        <span
-                          style={{
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            background: "#22c55e",
-                            display: "inline-block",
-                          }}
-                        />
-                        online
-                      </>
-                    ) : (
-                      <>
-                        <span
-                          style={{
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            background: "#6b7280",
-                            display: "inline-block",
-                          }}
-                        />
-                        offline
-                      </>
-                    )}
-                  </div>
+
+            <div style={{ fontSize: "12px", color: "#9ca3af" }}>
+              {isOnline ? "online" : "offline"}
+            </div>
           </div>
         </div>
-
-        <div style={{ color: "#9ca3af" }}>⋮</div>
       </div>
 
-      {/*  CHAT BODY */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "12px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "6px",
-          background:
-            "radial-gradient(circle at top, #0f172a, #020617)",
-        }}
-      >
+      {/* CHAT BODY */}
+      <div style={{
+        flex: 1,
+        overflowY: "auto",
+        padding: "12px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "6px",
+        background: "radial-gradient(circle at top, #0f172a, #020617)",
+      }}>
+
         {messages.map((msg) => {
           const isMe = String(msg.senderId) === String(senderId);
 
           return (
-            <div
-              key={msg._id}
-              style={{
-                display: "flex",
-                justifyContent: isMe ? "flex-end" : "flex-start",
-                animation: "fadeIn 0.2s ease-in-out",
-              }}
-            >
-              <div
-                style={{
-                  background: isMe ? "#2563eb" : "#1f2937",
-                  padding: "10px 12px",
-                  borderRadius: isMe
-                    ? "14px 14px 4px 14px"
-                    : "14px 14px 14px 4px",
-                  maxWidth: "65%",
-                  color: "white",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                  wordBreak: "break-word",
-                }}
-              >
+            <div key={msg._id} style={{
+              display: "flex",
+              justifyContent: isMe ? "flex-end" : "flex-start",
+              animation: "fadeIn 0.2s ease-in-out",
+            }}>
+              <div style={{
+                background: isMe ? "#2563eb" : "#1f2937",
+                padding: "10px 12px",
+                borderRadius: isMe
+                  ? "14px 14px 4px 14px"
+                  : "14px 14px 14px 4px",
+                maxWidth: "65%",
+                color: "white",
+              }}>
                 {msg.text}
-
-                <div
-                  style={{
-                    fontSize: "10px",
-                    marginTop: "4px",
-                    opacity: 0.6,
-                    textAlign: "right",
-                  }}
-                >
-                  {msg.createdAt
-                    ? new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : ""}
-                </div>
               </div>
             </div>
           );
         })}
 
-        {/* typing indicator */}
         {isTyping && (
           <div style={{ display: "flex" }}>
-            <div
-              style={{
-                background: "#1f2937",
-                padding: "10px 14px",
-                borderRadius: "12px",
-                display: "flex",
-                gap: "6px",
-              }}
-            >
+            <div style={{
+              background: "#1f2937",
+              padding: "10px 14px",
+              borderRadius: "12px",
+              display: "flex",
+              gap: "6px",
+            }}>
               <span className="dot"></span>
               <span className="dot"></span>
               <span className="dot"></span>
