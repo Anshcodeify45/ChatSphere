@@ -76,7 +76,7 @@ function Register() {
             color: "white",
           }}
         >
-          <h2 style={{ textAlign: "center", marginBottom: "25px" }}>
+          <h2 style={{ textAlign: "center", marginBottom: "25px" ,color:'white'}}>
             Create Account
           </h2>
 

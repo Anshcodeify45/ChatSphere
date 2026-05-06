@@ -47,7 +47,7 @@ function Login() {
         }}
       >
         <div style={styles.card}>
-          <h2 style={{ textAlign: "center", marginBottom: 25 }}>
+          <h2 style={{ textAlign: "center", marginBottom: 25 ,color:'white'}}>
             ChatSphere Login
           </h2>
 
