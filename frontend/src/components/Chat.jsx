@@ -121,6 +121,14 @@ function Chat({ selectedUser, onlineUsers = [] }) {
     return <div style={{ color: "white", padding: "20px" }}>Loading...</div>;
   }
 
+  const formatTime = (time) => {
+  const date = new Date(time);
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100%" }}>
 
@@ -180,31 +188,49 @@ function Chat({ selectedUser, onlineUsers = [] }) {
                 msOverflowStyle: "none",
       }}>
 
-        {messages.map((msg) => {
-          const isMe = String(msg.senderId) === String(senderId);
+       {messages.map((msg) => {
+  const isMe = String(msg.senderId) === String(senderId);
 
-          return (
-            <div key={msg._id} style={{
-              display: "flex",
-              justifyContent: isMe ? "flex-end" : "flex-start",
-              animation: "fadeIn 0.2s ease-in-out",
-              
-            }}>
-              <div style={{
-                background: isMe ? "#2563eb" : "#1f2937",
-                padding: "10px 12px",
-                borderRadius: isMe
-                  ? "14px 14px 4px 14px"
-                  : "14px 14px 14px 4px",
-                maxWidth: "65%",
-                color: "white",
-                
-              }}>
-                {msg.text}
-              </div>
-            </div>
-          );
-        })}
+  return (
+    <div
+      key={msg._id}
+      style={{
+        display: "flex",
+        justifyContent: isMe ? "flex-end" : "flex-start",
+        animation: "fadeIn 0.2s ease-in-out",
+      }}
+    >
+      <div
+        style={{
+          background: isMe ? "#2563eb" : "#1f2937",
+          padding: "8px 12px",
+          borderRadius: isMe
+            ? "14px 14px 4px 14px"
+            : "14px 14px 14px 4px",
+          maxWidth: "65%",
+          color: "white",
+          display: "flex",
+          flexDirection: "column",
+          gap: "4px",
+        }}
+      >
+        {/* MESSAGE TEXT */}
+        <div>{msg.text}</div>
+
+        {/* TIME */}
+        <div
+          style={{
+            fontSize: "10px",
+            color: "#d1d5db",
+            textAlign: "right",
+          }}
+        >
+          {formatTime(msg.createdAt)}
+        </div>
+      </div>
+    </div>
+  );
+})}
 
         {isTyping && (
           <div style={{ display: "flex" }}>
