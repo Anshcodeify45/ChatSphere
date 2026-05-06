@@ -1,4 +1,10 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
 import { useEffect } from "react";
 import { socket } from "./socket";
 
@@ -6,13 +12,34 @@ import Navbar from "./components/Navbar";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { getUser } from "./utils/auth";
+
+
+function ProtectedRoute({ children }) {
+  const user = getUser();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function PublicRoute({ children }) {
+  const user = getUser();
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
 
 function AppLayout() {
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = getUser();
 
-  // Register user globally
+  // Register user globally (socket)
   useEffect(() => {
     if (user?._id) {
       socket.emit("add_user", user._id);
@@ -28,19 +55,37 @@ function AppLayout() {
     <>
       {!hideNavbar && <Navbar />}
 
-     <Routes>
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+      <Routes>
+        {/* DASHBOARD (PROTECTED) */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
 
-  <Route path="/login" element={<Login />} />
-  <Route path="/register" element={<Register />} />
-</Routes>
+        {/* LOGIN (PUBLIC ONLY) */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+
+        {/* REGISTER (PUBLIC ONLY) */}
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          }
+        />
+      </Routes>
     </>
   );
 }

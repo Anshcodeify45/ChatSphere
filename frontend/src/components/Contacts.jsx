@@ -6,9 +6,22 @@ function Contacts({ setSelectedUser }) {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
   const user = getUser();
   const currentUserId = user?._id;
 
+  /* RESPONSIVE */
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  /* FETCH USERS */
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -22,33 +35,33 @@ function Contacts({ setSelectedUser }) {
 
         setUsers(filtered);
       } catch (err) {
-        console.log(
-          "FETCH USERS ERROR:",
-          err.response?.data || err.message
-        );
+        console.log("FETCH USERS ERROR:", err.message);
       }
     };
 
-    if (currentUserId) {
-      fetchUsers();
-    }
+    if (currentUserId) fetchUsers();
   }, [currentUserId]);
 
-  // safe search filter
+  /* SEARCH FILTER */
   const filteredUsers = users.filter((u) =>
-    (u?.name || "")
-      .toLowerCase()
-      .includes(search.toLowerCase())
+    (u?.name || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        background: isMobile ? "#020617" : "transparent",
+      }}
+    >
 
-      {/* Header */}
+      {/* HEADER */}
       <div
         style={{
           padding: "15px",
-          fontSize: "18px",
+          fontSize: isMobile ? "16px" : "18px",
           fontWeight: "bold",
           borderBottom: "1px solid #374151",
           color: "white",
@@ -57,7 +70,7 @@ function Contacts({ setSelectedUser }) {
         Contacts
       </div>
 
-      {/* Search */}
+      {/* SEARCH */}
       <div style={{ padding: "10px" }}>
         <input
           type="text"
@@ -66,23 +79,27 @@ function Contacts({ setSelectedUser }) {
           onChange={(e) => setSearch(e.target.value)}
           style={{
             width: "100%",
-            padding: "8px",
+            padding: isMobile ? "10px" : "8px",
             borderRadius: "6px",
             border: "none",
             outline: "none",
             background: "#1e293b",
             color: "white",
+            fontSize: isMobile ? "14px" : "13px",
+            
           }}
         />
       </div>
 
-      {/* List */}
+      {/* LIST */}
       <div
         className="hide-scrollbar"
         style={{
           flex: 1,
           overflowY: "auto",
           padding: "10px",
+          scrollbarWidth: "none",
+                msOverflowStyle: "none",
         }}
       >
         {filteredUsers.map((u) => (
@@ -92,18 +109,19 @@ function Contacts({ setSelectedUser }) {
             style={{
               display: "flex",
               alignItems: "center",
-              padding: "10px",
+              padding: isMobile ? "12px" : "10px",
               marginBottom: "8px",
-              borderRadius: "8px",
+              borderRadius: "10px",
               cursor: "pointer",
               background: "#1e293b",
+              transition: "0.2s",
             }}
           >
-            {/* Avatar */}
+            {/* AVATAR */}
             <div
               style={{
-                width: "35px",
-                height: "35px",
+                width: isMobile ? "42px" : "35px",
+                height: isMobile ? "42px" : "35px",
                 borderRadius: "50%",
                 background: "#4b5563",
                 display: "flex",
@@ -112,13 +130,19 @@ function Contacts({ setSelectedUser }) {
                 marginRight: "10px",
                 fontWeight: "bold",
                 color: "white",
+                fontSize: isMobile ? "16px" : "14px",
               }}
             >
               {u?.name?.charAt(0)?.toUpperCase()}
             </div>
 
-            {/* Name */}
-            <span style={{ color: "white" }}>
+            {/* NAME */}
+            <span
+              style={{
+                color: "white",
+                fontSize: isMobile ? "15px" : "14px",
+              }}
+            >
               {u?.name}
             </span>
           </div>

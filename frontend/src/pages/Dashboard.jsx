@@ -4,149 +4,131 @@ import Chat from "../components/Chat";
 import Contacts from "../components/Contacts";
 import WelcomeScreen from "../components/WelcomeScreen";
 import { socket } from "../socket";
-import { getUser } from "../utils/auth";
 
 function Dashboard() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
 
-  const currentUser = getUser();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [showContacts, setShowContacts] = useState(false);
 
-  // SOCKET: online users
   useEffect(() => {
-    socket.on("online_users", (users) => {
-      setOnlineUsers(users);
-    });
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
 
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    socket.on("online_users", setOnlineUsers);
     return () => socket.off("online_users");
   }, []);
 
-  // SOCKET: new messages → update contacts sidebar
-  useEffect(() => {
-    const handler = (msg) => {
-      const senderId = msg.senderId;
-
-      setContacts((prev) => {
-        const exists = prev.find((c) => c._id === senderId);
-
-        if (exists) {
-          return prev.map((c) =>
-            c._id === senderId
-              ? {
-                  ...c,
-                  lastMessage: msg.text,
-                  unread: selectedUser?._id === senderId ? 0 : (c.unread || 0) + 1,
-                }
-              : c
-          );
-        }
-
-        return [
-          {
-            _id: senderId,
-            name: msg.senderName || "New User",
-            lastMessage: msg.text,
-            unread: 1,
-          },
-          ...prev,
-        ];
-      });
-    };
-
-    socket.on("receive_message", handler);
-
-    return () => socket.off("receive_message", handler);
-  }, [selectedUser]);
-
-  // restore selected user from storage
-  useEffect(() => {
-    const saved = localStorage.getItem("selectedUser");
-
-    if (saved && saved !== "undefined") {
-      try {
-        setSelectedUser(JSON.parse(saved));
-      } catch {
-        localStorage.removeItem("selectedUser");
-      }
-    }
-  }, []);
-
-  // handle user select
   const handleSelectUser = (user) => {
     setSelectedUser(user);
-
-    setContacts((prev) =>
-      prev.map((c) =>
-        c._id === user._id ? { ...c, unread: 0 } : c
-      )
-    );
-
+    setShowContacts(false); // close contacts after selecting
     localStorage.setItem("selectedUser", JSON.stringify(user));
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "90vh",
-        width: "100%",
-        overflow: "hidden",
-        fontFamily: "Arial",
-      }}
-    >
-      {/* LEFT SIDEBAR */}
-      <div
-        style={{
-          width: "20%",
-          minWidth: "220px",
-          background: "#111827",
-          color: "white",
-          borderRight: "1px solid #374151",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Sidebar
-          contacts={contacts}
-          setSelectedUser={handleSelectUser}
-          onlineUsers={onlineUsers}
-        />
-      </div>
+    <div style={{
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      height: "90vh",
+      width: "100%",
+      fontFamily: "Arial",
+      overflow: "hidden"
+    }}>
 
-      {/* CHAT AREA */}
-      <div
-        style={{
-          flex: 1,
+      {/* LEFT SIDEBAR (hidden on mobile when contacts open) */}
+      {(!isMobile || !showContacts) && (
+        <div style={{
+          width: isMobile ? "100%" : "20%",
+          background: "#111827",
+          borderRight: isMobile ? "none" : "1px solid #374151",
           display: "flex",
           flexDirection: "column",
-          background: "#0f172a",
-        }}
-      >
-        {selectedUser ? (
-          <Chat
-            selectedUser={selectedUser}
+        }}>
+          <Sidebar
+            contacts={contacts}
+            setSelectedUser={handleSelectUser}
             onlineUsers={onlineUsers}
           />
-        ) : (
-          <WelcomeScreen />
-        )}
-      </div>
 
-      {/* RIGHT CONTACTS */}
-      <div
-        style={{
-          width: "20%",
-          minWidth: "220px",
+          {/* MOBILE CONTACT BUTTON */}
+          {isMobile && (
+            <button
+              onClick={() => setShowContacts(true)}
+              style={{
+                padding: "12px",
+                background: "#2563eb",
+                color: "white",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Open Contacts
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* CHAT AREA (hidden when contacts open on mobile) */}
+      {(!isMobile || !showContacts) && (
+        <div style={{
+          flex: 1,
+          background: "#0f172a",
+          display: "flex",
+          flexDirection: "column"
+        }}>
+          {selectedUser?._id ? (
+            <Chat
+              selectedUser={selectedUser}
+              onlineUsers={onlineUsers}
+            />
+          ) : (
+            <WelcomeScreen />
+          )}
+        </div>
+      )}
+
+      {/* CONTACTS PANEL (FULL SCREEN ON MOBILE) */}
+      {(showContacts || !isMobile) && (
+        <div style={{
+          width: isMobile ? "100%" : "20%",
           background: "#020617",
-          color: "white",
-          borderLeft: "1px solid #374151",
+          borderLeft: isMobile ? "none" : "1px solid #374151",
           display: "flex",
           flexDirection: "column",
-        }}
-      >
-        <Contacts setSelectedUser={handleSelectUser} />
-      </div>
+          position: isMobile ? "absolute" : "static",
+          top: 0,
+          left: 0,
+          height: "100%",
+          zIndex: 10,
+        }}>
+          
+          {/* CLOSE BUTTON (mobile only) */}
+          {isMobile && (
+            <button
+              onClick={() => setShowContacts(false)}
+              style={{
+                padding: "12px",
+                background: "#ef4444",
+                color: "white",
+                border: "none",
+              }}
+            >
+              Close Contacts
+            </button>
+          )}
+
+          <Contacts setSelectedUser={handleSelectUser} />
+        </div>
+      )}
+
     </div>
   );
 }

@@ -26,62 +26,32 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
       );
 
       setUsers(filteredUsers);
-
-      const tempMessages = {};
-      const tempUnread = {};
-
-      filteredUsers.forEach((u) => {
-        tempMessages[u._id] = "Start chatting...";
-        tempUnread[u._id] = 0;
-      });
-
-      setLastMessages(tempMessages);
-      setUnread(tempUnread);
     } catch (err) {
       console.log("FETCH CONVERSATIONS ERROR:", err.message);
     }
   };
 
-  // LOAD ON LOGIN
   useEffect(() => {
     fetchConversations();
   }, [senderId]);
 
-  // SOCKET REFRESH (SAFE)
   useEffect(() => {
     socket.on("refresh_sidebar", fetchConversations);
-
-    return () => {
-      socket.off("refresh_sidebar", fetchConversations);
-    };
+    return () => socket.off("refresh_sidebar", fetchConversations);
   }, [senderId]);
 
-  // RECEIVE MESSAGE (FIXED MEMORY SAFE)
+  // RECEIVE MESSAGE
   useEffect(() => {
     const handler = (msg) => {
       const sender = msg.senderId;
 
-      setUsers((prev) => {
-        const exists = prev.find((u) => u._id === sender);
-
-        if (!exists) {
-          return [
-            {
-              _id: sender,
-              name: msg.senderName || "User",
-            },
-            ...prev,
-          ];
-        }
-
-        return prev;
-      });
-
+      // update last message
       setLastMessages((prev) => ({
         ...prev,
         [sender]: msg.text,
       }));
 
+      // unread logic
       setUnread((prev) => {
         if (sender === activeUserId) return prev;
 
@@ -90,13 +60,24 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
           [sender]: (prev[sender] || 0) + 1,
         };
       });
+
+      // add user if not exists
+      setUsers((prev) => {
+        const exists = prev.find((u) => u._id === sender);
+
+        if (!exists) {
+          return [
+            { _id: sender, name: msg.senderName || "User" },
+            ...prev,
+          ];
+        }
+
+        return prev;
+      });
     };
 
     socket.on("receive_message", handler);
-
-    return () => {
-      socket.off("receive_message", handler);
-    };
+    return () => socket.off("receive_message", handler);
   }, [activeUserId]);
 
   // CLICK USER
@@ -187,9 +168,8 @@ function Sidebar({ setSelectedUser, onlineUsers = [] }) {
                   <div style={{ color: "white", fontSize: "14px" }}>
                     {u.name}
                   </div>
-
                   <div style={{ color: "#9ca3af", fontSize: "12px" }}>
-                    {lastMessages[u._id] || "No messages"}
+                    {lastMessages[u._id] || "Start chatting..."}
                   </div>
                 </div>
               </div>

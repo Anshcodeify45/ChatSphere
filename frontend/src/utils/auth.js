@@ -1,6 +1,6 @@
-// utils/auth.js
 
-// Save user safely (NORMALIZED)
+
+// Save user safely 
 export const saveUser = (data) => {
   try {
     if (!data) return;

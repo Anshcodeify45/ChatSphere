@@ -4,7 +4,7 @@ import { socket } from "../socket";
 import Messageinput from "./Messageinput";
 import { getUser } from "../utils/auth";
 
-// typing CSS (FIXED)
+// typing CSS
 const typingCSS = `
 .dot {
   width: 6px;
@@ -29,12 +29,14 @@ const typingCSS = `
 }
 `;
 
+
+
 function Chat({ selectedUser, onlineUsers = [] }) {
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef(null);
 
-  const currentUser = getUser(); // ✅ ONLY ONCE
+  const currentUser = getUser(); 
   const senderId = currentUser?._id;
   const receiverId = selectedUser?._id;
   const isOnline = onlineUsers.includes(selectedUser?._id);
@@ -88,20 +90,27 @@ function Chat({ selectedUser, onlineUsers = [] }) {
   }, [senderId, receiverId]);
 
   // typing
-  useEffect(() => {
-    socket.on("typing", ({ senderId }) => {
-      if (String(senderId) === String(receiverId)) setIsTyping(true);
-    });
+ useEffect(() => {
+  const handleTyping = ({ senderId }) => {
+    if (String(senderId) === String(receiverId)) {
+      setIsTyping(true);
+    }
+  };
 
-    socket.on("stop_typing", ({ senderId }) => {
-      if (String(senderId) === String(receiverId)) setIsTyping(false);
-    });
+  const handleStopTyping = ({ senderId }) => {
+    if (String(senderId) === String(receiverId)) {
+      setIsTyping(false);
+    }
+  };
 
-    return () => {
-      socket.off("typing");
-      socket.off("stop_typing");
-    };
-  }, [receiverId]);
+  socket.on("typing", handleTyping);
+  socket.on("stop_typing", handleStopTyping);
+
+  return () => {
+    socket.off("typing", handleTyping);
+    socket.off("stop_typing", handleStopTyping);
+  };
+}, [receiverId]);
 
   // auto scroll
   useEffect(() => {
@@ -146,7 +155,13 @@ function Chat({ selectedUser, onlineUsers = [] }) {
             </div>
 
             <div style={{ fontSize: "12px", color: "#9ca3af" }}>
-              {isOnline ? "online" : "offline"}
+              {isTyping ? (
+                <span style={{ color: "#60a5fa" }}>typing...</span>
+              ) : isOnline ? (
+                "online"
+              ) : (
+                "offline"
+              )}
             </div>
           </div>
         </div>
@@ -161,6 +176,8 @@ function Chat({ selectedUser, onlineUsers = [] }) {
         flexDirection: "column",
         gap: "6px",
         background: "radial-gradient(circle at top, #0f172a, #020617)",
+        scrollbarWidth: "none",
+                msOverflowStyle: "none",
       }}>
 
         {messages.map((msg) => {
@@ -171,6 +188,7 @@ function Chat({ selectedUser, onlineUsers = [] }) {
               display: "flex",
               justifyContent: isMe ? "flex-end" : "flex-start",
               animation: "fadeIn 0.2s ease-in-out",
+              
             }}>
               <div style={{
                 background: isMe ? "#2563eb" : "#1f2937",
@@ -180,6 +198,7 @@ function Chat({ selectedUser, onlineUsers = [] }) {
                   : "14px 14px 14px 4px",
                 maxWidth: "65%",
                 color: "white",
+                
               }}>
                 {msg.text}
               </div>
