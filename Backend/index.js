@@ -16,7 +16,10 @@ const server = http.createServer(app);
 
 //  CORS 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: [
+    "http://localhost:5173",
+    "https://chat-sphere-iota-sepia.vercel.app"
+  ],
   credentials: true
 }));
 
@@ -30,9 +33,12 @@ app.use("/api/users", userRoutes);
 // SOCKET SETUP
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST"],
-  },
+    origin: [
+      "http://localhost:5173",
+      "https://chat-sphere-iota-sepia.vercel.app"
+    ],
+    methods: ["GET", "POST"]
+  }
 });
 
 // Store online users
