@@ -3,19 +3,31 @@ import cors from "cors";
 import http from "http";
 import mongoose from "mongoose";
 import { Server } from "socket.io";
+import dotenv from "dotenv";
+
 import authRoutes from "./routes/authRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+
+dotenv.config();
+
 const app = express();
 const server = http.createServer(app);
 
-app.use(cors());
+//  CORS 
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}));
+
 app.use(express.json());
 
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
 
+// SOCKET SETUP
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
@@ -29,59 +41,41 @@ const onlineUsers = new Map();
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-
-
-  // Register user
+  // User comes online 
   socket.on("add_user", (userId) => {
     onlineUsers.set(String(userId), socket.id);
+
+    io.emit("online_users", Array.from(onlineUsers.keys()));
     console.log("ONLINE USERS:", onlineUsers);
   });
 
- socket.on("typing", ({ senderId, receiverId }) => {
-  const receiverSocketId = onlineUsers.get(String(receiverId));
+  // typing
+  socket.on("typing", ({ senderId, receiverId }) => {
+    const receiverSocketId = onlineUsers.get(String(receiverId));
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("typing", { senderId });
+    }
+  });
 
-  if (receiverSocketId) {
-    io.to(receiverSocketId).emit("typing", { senderId });
-  }
-});
+  // stop typing
+  socket.on("stop_typing", ({ senderId, receiverId }) => {
+    const receiverSocketId = onlineUsers.get(String(receiverId));
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("stop_typing", { senderId });
+    }
+  });
 
-socket.on("stop_typing", ({ senderId, receiverId }) => {
-  const receiverSocketId = onlineUsers.get(String(receiverId));
-
-  if (receiverSocketId) {
-    io.to(receiverSocketId).emit("stop_typing", { senderId });
-  }
-});
-
-  // Send message
+  // send message
   socket.on("send_message", (data) => {
     const receiverSocketId = onlineUsers.get(String(data.receiverId));
-
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("receive_message", data);
     }
   });
 
-  // Handle disconnect
+  //  disconnect 
   socket.on("disconnect", () => {
-    for (let [userId, sockId] of onlineUsers.entries()) {
-      if (sockId === socket.id) {
-        onlineUsers.delete(userId);
-        break;
-      }
-    }
-  });
-
-    // user comes online
-  socket.on("add_user", (userId) => {
-    onlineUsers.set(userId, socket.id);
-
-    io.emit("online_users", Array.from(onlineUsers.keys()));
-  });
-
-  // disconnect = offline
-  socket.on("disconnect", () => {
-    for (let [userId, socketId] of onlineUsers) {
+    for (let [userId, socketId] of onlineUsers.entries()) {
       if (socketId === socket.id) {
         onlineUsers.delete(userId);
         break;
@@ -89,19 +83,22 @@ socket.on("stop_typing", ({ senderId, receiverId }) => {
     }
 
     io.emit("online_users", Array.from(onlineUsers.keys()));
+    console.log("User disconnected:", socket.id);
   });
 });
 
+// HOME ROUTE
 app.get("/", (req, res) => {
   res.send("Chat API Running");
 });
 
-mongoose
-  .connect("mongodb://anishpatnaik45:Ansh1998@ac-9toov8i-shard-00-00.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-01.xr2kykj.mongodb.net:27017,ac-9toov8i-shard-00-02.xr2kykj.mongodb.net:27017/Chat_Sphere?ssl=true&replicaSet=atlas-8rzsgx-shard-0&authSource=admin&appName=Cluster0")
+// MONGODB CONNECTION & SERVER START
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
-    server.listen(8080, () => {
-      console.log("Server running on port 8080");
+
+    server.listen(process.env.PORT, () => {
+      console.log(`Server running on port ${process.env.PORT}`);
     });
   })
   .catch((err) => console.log(err));
